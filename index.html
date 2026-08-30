@@ -1,43 +1,1500 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-		/>
 
-		<title>reveal.js</title>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-		<link rel="stylesheet" href="dist/reset.css" />
-		<link rel="stylesheet" href="dist/reveal.css" />
-		<link rel="stylesheet" href="dist/theme/black.css" />
+	<title>Back to basic: Templates</title>
 
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" />
-	</head>
-	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
-		</div>
+	<link rel="stylesheet" href="dist/reset.css" />
+	<link rel="stylesheet" href="dist/reveal.css" />
+	<link rel="stylesheet" href="dist/theme/white.css" />
 
-		<script src="dist/reveal.js"></script>
-		<script src="dist/plugin/notes.js"></script>
-		<script src="dist/plugin/markdown.js"></script>
-		<script src="dist/plugin/highlight.js"></script>
-		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
-			Reveal.initialize({
-				hash: true,
+	<!--- SOA https://godbolt.org/z/feb9bzzzv -->
 
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+	<!-- Theme used for syntax highlighted code -->
+	<link rel="stylesheet" href="./node_modules/highlight.js/styles/github.css" />
+
+	<style>
+		:root {
+			--code-background: rgb(240, 240, 240);
+		}
+
+		.reveal h1 {
+			text-align: left;
+			color: #0039a3;
+		}
+
+		.reveal h2 {
+			text-align: left;
+		}
+
+		.reveal pre:has(> code.fragment.visible:last-of-type:not(.current-fragment))>code.fragment.visible:last-of-type:not(.current-fragment).has-highlights tr:not(.highlight-line) {
+			opacity: 1;
+		}
+
+		.reveal h3 {
+			text-align: left;
+		}
+
+		.reveal p {
+			text-align: left;
+		}
+
+		.reveal ul,
+		.reveal ol {
+			display: block;
+			text-align: left;
+			margin-left: 2em;
+		}
+
+		.reveal li {
+			text-align: left;
+		}
+
+		.reveal pre {
+			width: 100%;
+		}
+
+		.reveal .r-stack {
+			width: 100%;
+		}
+
+		.reveal .r-stack>* {
+			width: 100%;
+		}
+
+		.reveal code {
+			background-color: var(--code-background);
+		}
+
+		.reveal mark {
+			background: rgba(255, 200, 0, 0.35);
+			color: inherit;
+			border-radius: 3px;
+			padding: 0 2px;
+		}
+
+		.reveal small,
+		.reveal small * {
+			vertical-align: middle;
+		}
+
+		.slide-generic-programming .slide-fit {
+			transform: scale(0.9);
+			transform-origin: top left;
+			width: 116.279%;
+		}
+
+		.slide-return-deduction .slide-fit {
+			transform: scale(0.9);
+			transform-origin: top left;
+			width: 111.112%;
+		}
+
+		.reveal .slides section.slide-register-bank-code.present {
+			display: grid !important;
+			grid-template-rows: auto auto auto minmax(0, 1fr) auto minmax(0, 1fr);
+			height: 100%;
+			align-content: stretch;
+			box-sizing: border-box;
+		}
+
+		.reveal .slides section.slide-register-bank-code.present>pre {
+			min-height: 0;
+			box-sizing: border-box;
+			overflow-y: auto;
+			overflow-x: auto;
+			margin-top: 0.3em;
+		}
+
+		.reveal .slides section.slide-register-bank-code.present>pre code {
+			max-height: none;
+		}
+	</style>
+	<script>
+		window.revealReadyQueue = window.revealReadyQueue || [];
+
+		function markCode(markTarget, text, occurrence = 1, code = document.querySelector(`pre[data-mark-target="${markTarget}"] code`)) {
+			if (!code) return false;
+
+			const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+			const textNodes = [];
+			let node;
+			while ((node = walker.nextNode())) textNodes.push(node);
+
+			const fullText = textNodes.map(n => n.textContent).join('');
+
+			let searchFrom = 0, idx = -1, count = 0;
+			while (count < occurrence) {
+				idx = fullText.indexOf(text, searchFrom);
+				if (idx === -1) {
+					return false; // not found
+				}
+				count++;
+				searchFrom = idx + 1;
+			}
+
+			function locate(globalOffset) {
+				let offset = globalOffset;
+				for (const n of textNodes) {
+					if (offset <= n.textContent.length) return { node: n, offset };
+					offset -= n.textContent.length;
+				}
+				const last = textNodes[textNodes.length - 1];
+				return { node: last, offset: last.textContent.length };
+			}
+
+			const start = locate(idx);
+			const end = locate(idx + text.length);
+
+			const range = document.createRange();
+			range.setStart(start.node, start.offset);
+			range.setEnd(end.node, end.offset);
+
+			const mark = document.createElement('mark');
+			mark.appendChild(range.extractContents());
+			range.insertNode(mark);
+			return true;
+		}
+
+		function highlightMarkedCode(markTarget, rules) {
+			document.querySelectorAll(`pre[data-mark-target="${markTarget}"] code`).forEach((code) => {
+				if (code.dataset[`${markTarget}Highlighted`]) return;
+				let found = false;
+				rules.forEach(([text, occurrence]) => {
+					if (markCode(markTarget, text, occurrence, code)) {
+						found = true;
+					}
+				});
+				if (found) {
+					code.dataset[`${markTarget}Highlighted`] = 'true';
+				}
 			});
-		</script>
-	</body>
+		}
+	</script>
+</head>
+
+<body>
+	<div class="reveal">
+		<div class="slides">
+			<!-- Slide: Overview -->
+			<section data-auto-animate>
+				<h1>What we will cover</h1>
+				<ul>
+					<li>Template definition &amp; syntax</li>
+					<li>Function templates &amp; instantiation</li>
+					<li>Explicit template specialization</li>
+					<li>Template argument deduction</li>
+					<li>Generic programming</li>
+					<li>Variadic templates &amp; fold expressions</li>
+					<li>Perfect forwarding</li>
+					<li>Variable templates &amp; class templates</li>
+					<li>Practical examples</li>
+				</ul>
+			</section>
+
+			<!-- Slide: Template definition -->
+			<section data-auto-animate>
+				<h1>Template definition</h1>
+				<p>Definition from <a
+						href="https://en.cppreference.com/cpp/language/templates">https://en.cppreference.com/cpp/language/templates</a>
+				</p>
+				<p>A template is a C++ entity that defines one of the following:</p>
+				<ul>
+					<li>a family of classes (class template), which may be nested classes</li>
+					<li>a family of functions (function template), which may be member functions</li>
+
+					<li>an alias to a family of types (alias template) <code
+							style="background-color: var(--code-background);">(since C++11)</code></li>
+					<li>a family of variables (variable template) <code
+							style="background-color: var(--code-background);">(since C++14)</code></li>
+					<li>a concept (constraints and concepts) <code
+							style="background-color: var(--code-background);">(since C++20)</code></li>
+				</ul>
+			</section>
+
+			<!-- Slide: Template syntax -->
+			<section data-auto-animate>
+				<h1>Template syntax</h1>
+				<pre><code class="language-cpp">template&lt; [parameter-list] &gt;
+declaration</code></pre>
+				<p><code>parameter-list</code> can be:</p>
+				<ul>
+					<li>compile time constant parameter e.g. <code>5</code>, enum value, constexpr value, ...</li>
+					<li>type parameter e.g. <code>int</code>, <code>std::string</code></li>
+					<li>template parameter pack using ellipsis <code
+							style="background-color: var(--code-background);">...</code></li>
+					<li>template template parameter e.g. <code>template&lt;typename&gt; class</code></li>
+				</ul>
+				<p><code>declaration</code> can be:</p>
+				<ul>
+					<li>a (class member) function</li>
+					<li>a class/struct</li>
+					<li>a type alias</li>
+				</ul>
+			</section>
+
+			<!-- Slide: Function template defines a family of functions -->
+			<section data-auto-animate>
+				<h1>Function template</h1>
+				<h2>Defines a family of functions</h2>
+				<p>💡 Give good name to template parameters</p>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename Swappable&gt;
+void mySwap(Swappable&amp; a, Swappable&amp; b) {
+	Swappable tmp = std::move(a);
+	a = std::move(b);
+	b = std::move(tmp);
+}</code></pre>
+				<p class="fragment">⚠️ The compiler does not produce any code if the template is not
+					instantiated</p>
+				<p class="fragment">⚠️ The definition is <b><u>usually</u></b> defined inline <small>(but doesn't have
+						to)</small></p>
+			</section>
+
+			<!-- Slide: Function template instantiation -->
+			<section data-auto-animate>
+				<h1>Function template</h1>
+				<h2>Defines a family of functions</h2>
+				<div class="fragment">
+					<p>The compiler generates a function for each instantiation:</p>
+					<pre><code class="language-cpp" data-line-numbers>int a = 5, b = 10;
+mySwap(a, b);
+assert(a == 10 &amp;&amp; b == 5);</code></pre>
+					<pre><code class="language-cpp" data-line-numbers>std::vector&lt;int&gt; c = {1,2}, d = {3,4};
+mySwap(c, d);
+assert((c == std::vector&lt;int&gt;{3,4} &amp;&amp; 
+        d == std::vector&lt;int&gt;{1,2}));</code></pre>
+					<p><a href="https://cppinsights.io/s/d7d80c58" target="_blank"
+							rel="noopener">https://cppinsights.io/s/d7d80c58</a></p>
+				</div>
+				<div class="fragment">
+					<p>⚠️ Calling the function with 2 different types fails</p>
+					<pre><code class="language-cpp" data-line-numbers>int e = 1;
+std::vector&lt;int&gt; f = {5,6};
+mySwap(e, f); // ❌ Does not compile</code></pre>
+				</div>
+			</section>
+
+			<!-- Slide: Abbreviated function templates with auto parameters -->
+			<section data-auto-animate>
+				<h1>Function template</h1>
+				<h2>Defines a family of functions</h2>
+				<p><code>auto</code> parameters are still templates</p>
+				<p>Abbreviated function template syntax (C++20)</p>
+				<p>ℹ️ Each <code>auto</code> introduces a hidden template parameter</p>
+				<pre><code class="language-cpp" data-line-numbers>void mySwap(auto&amp; a, auto&amp; b) {
+	auto tmp = std::move(a);
+	a = std::move(b);
+	b = std::move(tmp);
+}</code></pre>
+				<p class="fragment">💡 In order to retrieve the type of an <code class="language-cpp">auto</code>
+					parameter, use <code>decltype(...)</code></p>
+			</section>
+
+			<!-- Slide: Function template implicit requirements -->
+			<section data-auto-animate>
+				<h1>Function template</h1>
+				<h2>Implicit requirements</h2>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void mySwap(Swappable&amp; a, Swappable&amp; b) {
+	Swappable tmp = std::move(a);
+	a = std::move(b);
+	b = std::move(tmp);
+}</code></pre>
+				<p>What are the implicit requirements for the type <code>T</code>?</p>
+				<p>🙋‍♂️🙋‍♀️</p>
+				<ul class="fragment">
+					<li>Must be move constructible i.e have a valid <code class="language-cpp">T(T&amp;&amp;)</code> constructor
+					</li>
+					<li>Must be move assignable i.e have a valid <code class="language-cpp">T&amp; operator=(T&amp;&amp;)</code>
+						assignment operator</li>
+				</ul>
+				<div class="fragment">
+					<p>💡 C++ 20 formally defines the requirement via the <code class="language-cpp">swappable</code>
+						concept.</p>
+					<p>💡 Before C++20, document the requirement explicitly using comments.</p>
+				</div>
+				<p class="fragment">ℹ️ There are numerous possible implicit requirements<br> e.g. <code
+						class="language-cpp">T</code>
+					must have a function member <code class="language-cpp">T.fun(int)</code></p>
+			</section>
+
+			<!-- Slide: Explicit template specialization example -->
+			<section data-auto-animate>
+				<h1>Explicit template specialization</h1>
+				<pre data-id="myMax"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+T myMax(T a, T b) {
+	return a &gt; b ? a : b;
+}</code></pre>
+				<p class="fragment"><code>myMax(5,4)</code> returns <code>5</code> 👍</p>
+			</section>
+
+			<!-- Slide: Explicit specialization with string literal issue -->
+			<section data-auto-animate>
+				<h1>Explicit template specialization</h1>
+				<pre data-id="myMax"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+T myMax(T a, T b) {
+	return a &gt; b ? a : b;
+}</code></pre>
+				<p>What is the result of the following call? 🤔</p>
+				<pre><code class="language-cpp">myMax("hello", "world");</code></pre>
+				<p>🙋‍♂️🙋‍♀️</p>
+				<div class="fragment">
+					<p>The deduced function is</p>
+					<pre data-id="myMax"><code class="language-cpp" data-line-numbers>const char* myMax(const char* a, const char* b) {
+	return a &gt; b ? a : b;
+}</code></pre>
+					<p>We don't know the result 🤷</p>
+					<p>Pointer comparison</p>
+				</div>
+			</section>
+
+			<!--- 
+			<section data-auto-animate>
+				<h1>Explicit template specialization</h1>
+				<p>The deduced function is</p>
+				<pre data-id="myMax"><code class="language-cpp" data-line-numbers>const char* myMax(const char* a, const char* b) {
+	return a &gt; b ? a : b;
+}</code></pre>
+				<p>We don't know the result 🤷</p>
+				<p>Pointer comparison</p>
+			</section>
+			-->
+
+			<!-- Slide: Explicit specialization solution -->
+			<section data-auto-animate>
+				<h1>Explicit template specialization</h1>
+				<p>Template specialization allows to give a custom implementation for specific types.</p>
+				<p>We can fix our problem by providing an explicit specialization for <code>const char*</code></p>
+				<pre data-id="myMax"><code class="language-cpp" data-line-numbers>template&lt;&gt;
+const char* myMax(const char* a, const char* b) {
+	return std::strcmp(a, b) &gt; 0 ? a : b;
+}</code></pre>
+				<p>Now <code>myMax("hello", "world")</code> returns the pointer to <code>"world"</code> 👍</p>
+				<p>💡 Clear benefit over a C macro 💡</p>
+			</section>
+
+			<!-- Slide: Template argument deduction general -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>General</h2>
+				<p>Template argument deduction is the process by which the compiler determines the template arguments
+					from the function arguments.<br>For instance</p>
+				<pre data-id="argDeduct"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+T myMax(T a, T b) {
+	return a &gt; b ? a : b;
+}
+
+void myFun() {
+	int a = 5, b = 4;
+	auto c = myMax(a, b);
+	static_assert(std::is_same_v&lt;decltype(c), int&gt;);
+}</code></pre>
+				<p>Calling <code>myMax(5, 4)</code> deduces <code>T = int</code></p>
+			</section>
+
+			<!-- Slide: Template argument deduction another example -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>General</h2>
+				<p>Another example</p>
+				<pre data-id="argDeduct"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+T myMax(T a, T b) {
+	return a &gt; b ? a : b;
+}
+
+void myFun() {
+	auto c = myMax(5.1, 5.2);
+}</code></pre>
+				<p>What type is <code>T</code> deduced ?</p>
+				<p>🙋‍♂️🙋‍</p>
+				<div class="fragment">
+					<pre><code class="language-cpp">double</code></pre>
+				</div>
+			</section>
+
+			<!-- Slide: Explicit template argument forcing float -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>General</h2>
+				<p>Call the specialization with <mark>an explicit template argument</mark> to force using float</p>
+				<pre data-id="argDeduct" data-mark-target="myMax-call"><code class="language-cpp">template&lt;typename T&gt;
+T myMax(T a, T b) {
+	return a &gt; b ? a : b;
+}
+
+void myFun() {
+	auto c = myMax&lt;float&gt;(5.1, 5.2);
+}</code></pre>
+				<script>
+					window.revealReadyQueue.push(() => {
+						markCode('myMax-call', '<float>');
+					});
+				</script>
+			</section>
+
+			<!-- Slide: CV qualifier deduction -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>CV qualifier deduction</h2>
+				<p>Depending on whether the parameter type is a reference or not, cv-qualifiers are be deduced
+					differently.</p>
+				<div style="display: flex; gap: 40px; justify-content: space-between;">
+					<div style="flex: 1;">
+						<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void func(T a);
+
+template&lt;typename T&gt;
+void funcRefParam(T&amp; a);
+</code></pre>
+					</div>
+					<div style="flex: 1;">
+						<pre data-mark-target="cv-qual-deduct"><code class="language-cpp" data-line-numbers>int x = 5;
+const int cx = 5;
+
+func(x);  // T is int
+func(cx); // T is int (cv-qualifier is dropped)
+funcRefParam(x);  // T is int
+funcRefParam(cx); // T is const int (cv-qualifier is preserved)</code></pre>
+					</div>
+				</div>
+				<div class="fragment"
+					style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max-content; max-width: 96%; padding: 28px 30px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
+					<p style="text-align: center; margin-bottom: 0.35em; font-size: clamp(1.05em, 1.6vw, 1.25em);">
+						<strong>🔑 Rules 🔑</strong>
+					</p>
+					<ul
+						style="width: max-content; max-width: 100%; margin: 0 auto; padding-left: 0; list-style-position: inside; text-align: left; font-size: clamp(0.82em, 1.15vw, 1em); white-space: nowrap;">
+						<li>If the parameter is passed by value, cv-qualifiers are dropped</li>
+						<li>If the parameter is passed by reference, cv-qualifiers are preserved</li>
+					</ul>
+				</div>
+				<script>
+					window.revealReadyQueue.push(() => {
+						markCode('cv-qual-deduct', 'int', 3);
+						markCode('cv-qual-deduct', 'int', 4);
+						markCode('cv-qual-deduct', 'int', 5);
+						markCode('cv-qual-deduct', 'const int', 2);
+					});
+				</script>
+			</section>
+
+			<!-- Slide: CV qualified parameters -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>CV qualified parameters</h2>
+				<div style="display: flex; gap: 40px; justify-content: space-between;">
+					<div style="flex: 1;">
+						<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void funcConstParam(const T a);
+
+template&lt;typename T&gt;
+void functConstRefParam(const T&amp; a);</code></pre>
+					</div>
+					<div style="flex: 1;">
+						<pre data-mark-target="cv-qual-deduct"><code class="language-cpp" data-line-numbers>int x = 5;
+const int cx = 5;
+
+functConstRefParam(x);  // T is int
+functConstRefParam(cx); // T is int (cv-qualifier is dropped)</code></pre>
+					</div>
+				</div>
+			</section>
+
+			<!-- Slide: Arrays and pointer deduction -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>Arrays and pointer deduction</h2>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void arrayFunc(T arg);
+
+template&lt;typename T&gt;
+void arrayRefFunc(T&amp; arg);</code></pre>
+				<pre><code class="language-cpp" data-line-numbers>int arr[5];
+arrayFunc(arr);    // T == int* (array decays to pointer)
+arrayRefFunc(arr); // T == int[5] (reference keeps the array type)</code></pre>
+			</section>
+
+			<!-- Slide: More on reference parameters -->
+			<!--- Do I want to keep this slide?-->
+			<section data-auto-animate>
+				<h1>Template argument deduction (to keep?)</h1>
+				<h2>More on reference parameters</h2>
+				<p>⚠️When the function parameter is a reference, its type also keep pointers⚠️</p>
+				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void increment(T&amp; value) {
+	++value;
+}
+
+int retries = 0;
+int* retriesPtr = &amp;retries;
+// ...
+// 😱 Forgot '*' 😱.
+increment(retriesPtr); // T is int* i.e. type of value is int*&amp;
+printf("%d\n", *retriesPtr); // 💥 disaster 💥</code></pre>
+				<script>
+					window.revealReadyQueue.push(() => {
+						markCode('ptr-deduct', 'int*', 2);
+						markCode('ptr-deduct', 'int*&');
+					});
+				</script>
+			</section>
+
+			<!-- Slide: Reference parameter takeaways -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>Reference parameter take away</h2>
+				<p class="fragment">⚠️Think twice when using non-const reference parameters</p>
+				<p class="fragment">💡Make use of <mark>&lt;type_traits&gt;</mark> e.g. <code>std::is_pointer</code>,
+					<code>std::is_const</code>, ... to validate the template argument type at compile type
+				</p>
+				<p class="fragment">💡From C++20, use concepts</p>
+			</section>
+
+			<!-- Slide: Return type deduction is not possible -->
+			<!---  Return param -->
+			<section class="slide-return-deduction" data-auto-animate>
+				<div class="slide-fit">
+					<h1>Template argument deduction</h1>
+					<h2>Return type deduction not possible</h2>
+					<p>⚠️ The compiler cannot deduce the template argument if it is used as a return type ⚠️</p>
+					<pre><code class="language-cpp">template&lt;typename T&gt;
+T parse(const std::string&amp; text);</code></pre>
+					<pre><code class="language-cpp">int i = parse("42"); // ❌ Does not compile</code></pre>
+					<p>The correct way to call <code>parse</code> is:</p>
+					<pre><code class="language-cpp">int i = parse&lt;int&gt;("42");</code></pre>
+					<p>You must specify <code>T</code> explicitly. There's no other way</p>
+					<div class="fragment">
+						<p>💡 Avoid code repetition by using <code>auto</code>💡</p>
+						<pre><code class="language-cpp">auto i = parse&lt;int&gt;("42");</code></pre>
+					</div>
+				</div>
+			</section>
+
+			<!-- Slide: Generic programming overview -->
+			<section class="slide-generic-programming" data-auto-animate>
+				<div class="slide-fit">
+					<h1>Putting templates to work</h1>
+					<h2>Generic programming</h2>
+					<div style="display: flex; gap: 40px; justify-content: space-between;">
+						<div style="flex: 1;">
+							<p>Iterate over any kind of iterables</p>
+							<pre><code class="language-cpp" data-line-numbers>template&lt;typename Iterables&gt;
+void print(const Iterables&amp; c) {
+	for (const auto&amp; element : c) {
+		std::cout &lt;&lt; element &lt;&lt; "\n";
+	}
+}</code></pre>
+						</div>
+						<div style="flex: 1;">
+							<div class="fragment">
+								<p>Works with</p>
+								<p>Any standard containers (vector, list, deque, set, map, ...) </p>
+								<pre><code class="language-cpp" data-line-numbers>std::vector&lt;int&gt; v = {1, 2, 3};
+print(v);</code></pre>
+							</div>
+							<div class="fragment">
+								<p>C++ 20's span and ranges</p>
+								<pre><code class="language-cpp" data-line-numbers>std::span&lt;int&gt; s = {1, 2, 3};
+print(s);
+
+std::vector&lt;int&gt; v = {1, 2, 3, 4, 5};
+auto even = v | std::views::filter([](int n) { return n % 2 == 0; });
+
+print(even);</code></pre>
+							</div>
+							<div class="fragment">
+								<p>C-style arrays</p>
+								<pre><code class="language-cpp" data-line-numbers>int arr[] = {1, 2, 3};
+print(arr);</code></pre>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Slide: Generic programming custom types -->
+			<section class="slide-generic-programming" data-auto-animate>
+				<div class="slide-fit">
+					<h1>Putting templates to work</h1>
+					<h2>Generic programming</h2>
+					<div style="display: flex; gap: 40px; justify-content: space-between;">
+						<div style="flex: 1;">
+							<p>Iterate over any kind of iterables</p>
+							<pre><code class="language-cpp" data-line-numbers>template&lt;typename Iterables&gt;
+void print(const Iterables&amp; c) {
+	for (const auto&amp; element : c) {
+		std::cout &lt;&lt; element &lt;&lt; "\n";
+	}
+}</code></pre>
+						</div>
+						<div style="flex: 1;">
+							<div class="fragment">
+								<p>Custom types</p>
+								<pre><code class="language-cpp" data-line-numbers>struct Graph { ... };
+
+Graph g;
+print(g); // ❌</code></pre>
+							</div>
+							<div class="fragment">
+								<p>Specialize the <code>print</code> function</p>
+								<pre><code class="language-cpp" data-line-numbers>template &lt;&gt;
+void print(const Graph&amp; g) { ... }
+
+Graph g;
+print(g); // 👍</code></pre>
+							</div>
+						</div>
+					</div>
+					<p class="fragment">Extensible 👍</p>
+				</div>
+			</section>
+
+			<!-- Slide: Generic programming polymorphism (Bjarne) -->
+			<section data-auto-animate>
+				<h1>Putting templates to work</h1>
+				<h2>Generic programming</h2>
+				<p>Polymorphic behaviour in between unrelated types</p>
+				<pre><code class="language-cpp" data-line-numbers="1-2|4-6,8-10|12-14,16-18|20-28,30-34">template&lt;typename T&gt;
+int legs(T&amp; ll) { return ll.legs(); }
+
+struct Cow {  // not in any class hiearchy
+	constexpr int legs() { return 4; }
+};
+
+struct Duck {   // not in any class hiearchy
+	constexpr int legs() { return 2; }
+};
+
+struct Animal {
+	virtual int legs() const = 0;
+};
+
+struct Centipede : Animal {
+	int legs() const { return 100; }
+};
+
+void f(Animal&amp; a)
+{
+	Cow c;
+	Duck d;
+
+	static_assert(legs(c) == 4);    // uses compile-time evaluation
+	static_assert(legs(d) == 2);
+	std::cout &lt;&lt; legs(a);           // calls virtual function
+}
+
+int main()
+{
+	Centipede c;
+	f(c);
+}</code></pre>
+				<p><small>Example from Bjarne Stroustrup</small></p>
+			</section>
+
+			<!-- Slide: Variadic templates -->
+			<section data-auto-animate>
+				<h1>Variadic templates</h1>
+				<p>Variadic templates are templates that take a variable number of template parameters.</p>
+				<p>Ellipsis (<code>...</code>) is used to tell which parameter is variadic and where it expands</p>
+				<pre><code class="language-cpp" data-line-numbers>// Base case: stops the recursion
+template&lt;typename... Args&gt;
+void print() {
+	std::cout &lt;&lt; std::endl;
+}
+
+// Recursive case: peel off the first argument, recurse on the rest
+template&lt;typename T, typename... Args&gt;
+void print(T first, Args... rest) {
+	std::cout &lt;&lt; first &lt;&lt; " ";
+	print(rest...);  // calls the base case once rest... is empty
+}</code></pre>
+				<div class="fragment">
+					<p>Calling <code class="language-cpp">print(1, 2.5, "hello")</code> prints <code>1 2.5 hello</code>
+					</p>
+				</div>
+			</section>
+
+			<!-- Slide: Variadic templates under the hood -->
+			<section data-auto-animate>
+				<h1>Variadic templates</h1>
+				<h2>Under the hood</h2>
+				<p>3 print functions having the right number and types of parameters are generated</p>
+				<img src="images/variadicPrint.png" alt="Variadic print"
+					style="width: 72%; max-width: 72%; max-height: 46vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
+				<p><a href="https://cppinsights.io/s/ed6d5cc7">https://cppinsights.io/s/ed6d5cc7</a></p>
+			</section>
+
+			<!-- Slide: Variadic templates fold expression -->
+			<section data-auto-animate>
+				<h1>Variadic templates</h1>
+				<h2 data-id="cpp17fold">C++ 17's fold expressions</h2>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename... Args&gt;
+void print(Args... args) {
+	((std::cout &lt;&lt; args &lt;&lt; " "), ...);
+}</code></pre>
+			</section>
+
+			<!-- Slide: Variadic templates fold expression under the hood -->
+			<section data-auto-animate>
+				<h1>Variadic templates</h1>
+				<h2 data-id="cpp17fold">C++ 17's fold expressions (under the hood)</h2>
+				<img src="images/variadicFold.png" alt="Variadic print"
+					style="width: 72%; max-width: 72%; max-height: 48vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
+				<p><a href="https://cppinsights.io/s/16760da2">https://cppinsights.io/s/16760da2</a></p>
+				<p><a
+						href="https://en.cppreference.com/cpp/language/fold">https://en.cppreference.com/cpp/language/fold</a>
+				</p>
+			</section>
+
+			<!-- Slide: Perfect forwarding -->
+			<section data-auto-animate>
+				<h1>Perfect forwarding</h1>
+				<p>Perfect forwarding is a technique that allows you to pass arguments to another function while
+					preserving their value category (lvalue or rvalue).</p>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename T, typename... Args&gt;
+void wrapper(Args&amp;&amp;... args) {
+	// Forward the arguments to another function
+	someFunction(std::forward&lt;Args&gt;(args)...);
+}</code></pre>
+			</section>
+
+			<!-- Slide: std::forward catch forwarding references -->
+			<section data-auto-animate>
+				<h1>Perfect forwarding</h1>
+				<h2>The <code>std::forward</code> Catch</h2>
+				<p>Only works when the parameter is a templated forwarding reference</p>
+				<pre><code class="language-cpp" data-line-numbers>template &lt;typename T&gt;
+void relay(T&amp;&amp; arg) {
+	consume(std::forward&lt;T&gt;(arg));
+}</code></pre>
+				<div class="fragment">
+					<p>It doesn't work on:</p>
+					<ul>
+						<li class="fragment">Fixed type e.g.<code>std::vector&lt;T&gt;&amp;&amp;</code></li>
+						<li class="fragment"><code>const T&amp;&amp;</code>: it is not a forwarding reference, only binds to
+							const rvalues</li>
+					</ul>
+				</div>
+			</section>
+
+			<!-- Slide: std::forward catch place where T is deduced -->
+			<section data-auto-animate>
+				<h1>Perfect forwarding</h1>
+				<h2>The <code>std::forward</code> Catch</h2>
+				<p>Only works if <code>T</code> is a template parameter of that function and deduced at the call site
+				</p>
+				<pre><code class="language-cpp" data-line-numbers>
+template &lt;typename T&gt; // T deduced HERE, at instantiation
+struct Object {
+	void relay(T&amp;&amp; arg) { // looks like T&amp;&amp;... but T is already fixed 
+		consume(std::forward&lt;T&gt;(arg));
+	}
+};
+  </code></pre>
+				<p>Example specialization: <code>Object&lt;int&gt; w;</code></p>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;&gt;
+struct Object&lt;int&gt; {
+	void relay(int&amp;&amp; arg) { // ⚠️ Only accept rvalues references of type int
+		consume(std::forward&lt;int&gt;(arg));
+	}
+};</code></pre>
+				<div class="fragment"
+					style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(92%, 980px); padding: 24px 28px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
+					<p style="text-align: center; margin-bottom: 0.4em;"><strong>Fix: make <code>relay</code>
+							templated</strong></p>
+					<pre><code class="language-cpp" data-line-numbers>template &lt;typename T&gt;
+struct Object {
+	template &lt;typename U&gt;
+	void relay(U&amp;&amp; arg) {
+		consume(std::forward&lt;U&gt;(arg));
+	}
+};</code></pre>
+				</div>
+			</section>
+
+			<!-- Slide: std::forward catch last gotchas -->
+			<section data-auto-animate>
+				<h1>Perfect forwarding</h1>
+				<h2>The <code>std::forward</code> Catch</h2>
+				<p>⚠️ Last gotchas ⚠️</p>
+				<ul>
+					<li class="fragment">Using <code>arg</code> again after forwarding it &rarr; possible moved-from bug
+					</li>
+					<li class="fragment"><code>std::move</code> instead of <code>std::forward</code> &rarr; moves
+						lvalues unconditionally</li>
+				</ul>
+			</section>
+
+			<!-- Slide: Perfect forwarding with auto&& -->
+			<section data-auto-animate>
+				<h1>Perfect forwarding</h1>
+				<p><code>auto&amp;&amp;</code> behaves like a forwarding reference</p>
+				<pre><code class="language-cpp" data-trim>
+auto relay = [](auto&amp;&amp; arg) {
+	consume(std::forward&lt;decltype(arg)&gt;(arg));
+};
+
+relay(42);              // arg deduced as int&amp;&amp;        -> rvalue preserved
+std::string s = "hi";
+relay(s);                 // arg deduced as std::string&amp;  -> lvalue preserved
+relay(std::move(s));      // arg deduced as std::string&amp;&amp; -> rvalue preserved
+  </code></pre>
+				<ul>
+					<li class="fragment">Generic lambda's <code>auto&amp;&amp;</code> deduces per call &rarr; same rules as a
+						function template's <code>T&amp;&amp;</code></li>
+					<li class="fragment">No named <code>T</code> to forward with &rarr; use <code>decltype(arg)</code>
+						instead</li>
+				</ul>
+			</section>
+
+			<!-- Slide: Perfect forwarding std::vector::emplace_back -->
+			<section data-auto-animate>
+				<h1>Perfect forwarding</h1>
+				<h3>Textbook example: <code>std::vector::emplace_back</code></h3>
+				<p><code>emplace_back</code> takes forwarding references and forwards them to the element constructor.
+				</p>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename... Args&gt;
+reference emplace_back(Args&amp;&amp;... args);</code></pre>
+				<div style="display: flex; gap: 36px; justify-content: space-between; align-items: flex-start;">
+					<div style="flex: 1;">
+						<p><code>push_back</code> builds an object first, then copies/moves it:</p>
+						<pre data-mark-target="pushBack-call"><code class="language-cpp" data-line-numbers>struct User {
+	User(int id, std::string name);
+};
+
+std::vector&lt;User&gt; users;
+
+// temporary + move
+users.push_back(User{2, "Bob"});</code></pre>
+					</div>
+					<div style="flex: 1;">
+						<p><code>emplace_back</code> constructs in-place and preserves value category:</p>
+						<pre data-mark-target="emplaceBack-call"><code class="language-cpp" data-line-numbers>struct User {
+	User(int id, std::string name);
+};
+
+std::vector&lt;User&gt; users;
+
+// Only constructor called
+users.emplace_back(2, "Bob");</code></pre>
+					</div>
+				</div>
+				<p><a href="https://godbolt.org/z/334GsGa4n">https://godbolt.org/z/334GsGa4n</a></p>
+				<script>
+					window.revealReadyQueue.push(() => {
+						markCode('pushBack-call', 'User{2, "Bob"}');
+						markCode('emplaceBack-call', '2, "Bob"');
+					});
+				</script>
+			</section>
+
+
+			<!-- Slide: Variable templates -->
+			<section data-auto-animate>
+				<h1>Variable template</h1>
+				<h2>Defines a family of variables</h2>
+				<p>Templates can also define variables.</p>
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+constexpr T max_value = std::numeric_limits&lt;T&gt;::max();</code></pre>
+				<div class="fragment">
+					<p>Use it like any other compile-time constant:</p>
+					<pre><code class="language-cpp" data-line-numbers>auto maxInt = max_value&lt;int&gt;;
+auto maxDouble = max_value&lt;double&gt;;</code></pre>
+				</div>
+				<div class="fragment">
+					<p>It can also be specialized for other types, such as <code>std::string</code>:</p>
+					<pre><code class="language-cpp" data-line-numbers>template&lt;&gt;
+constexpr std::string max_value&lt;std::string&gt; = "~~~";</code></pre>
+				</div>
+				<p class="fragment">💡 Great for reusable constants and type-dependent values.</p>
+			</section>
+
+			<!-- Slide: Class/struct template -->
+			<section data-auto-animate>
+				<h1>Class/struct template</h1>
+				<h2>Defines a family of classes</h2>
+				<p>A class template describes one class blueprint that the compiler instantiates for each type.</p>
+				<pre><code class="language-cpp" data-line-numbers="1-2|3-4|5-12|15-16">template&lt;typename T&gt;
+class Stack {
+private:
+	std::vector&lt;T&gt; data;
+public:
+	template &lt;typename... Args&gt;
+	void emplace(Args&amp;&amp;... args) { data.emplace_back(std::forward&lt;Args&gt;(args)...); }
+
+	void pop() { data.pop_back(); }
+	const T&amp; top() const { return data.back(); }
+	bool empty() const { return data.empty(); }
+	std::size_t size() const { return data.size(); }
+};
+
+Stack&lt;int&gt; intStack;
+Stack&lt;std::vector&lt;int&gt;&gt; vectorStack;</code></pre>
+				<p class="fragment"><code>Stack&lt;int&gt;</code> and <code>Stack&lt;std::vector&lt;int&gt;&gt;</code>
+					are different
+					classes generated from the same template.</p>
+			</section>
+
+			<!-- Slide: Class/struct template outside class definition-->
+			<section data-auto-animate>
+				<h1>Class/struct template</h1>
+				<h2>Definition outside of the class</h2>
+				<p>When the member function is defined outside the class, it needs its own template parameter list.</p>
+				<pre><code class="language-cpp" data-line-numbers="1-6|8-9|10-12">template &lt;typename T&gt;
+class Stack {
+public:
+	template &lt;typename... Args&gt;
+	void emplace(Args&amp;&amp;... args);
+};
+
+template &lt;typename T&gt; // Class template parameter list
+template &lt;typename... Args&gt; // Member function template parameter list
+void Stack&lt;T&gt;::emplace(Args&amp;&amp; value) {
+	data.emplace_back(std::forward&lt;Args&gt;(value));
+}</code></pre>
+			</section>
+
+			<!-- Slide: Template implementation in cpp file using extern template-->
+			<section data-auto-animate>
+				<h1>Class/struct template</h1>
+				<h3>Implementation in cpp file</h3>
+				<div class="fragment">
+					<p><a href="https://godbolt.org/z/xvTMdajGb">https://godbolt.org/z/xvTMdajGb</a></p>
+					<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
+						<div style="flex: 1;">
+							<p>stack.hpp</p>
+							<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+class Stack {
+private:
+	std::vector&lt;T&gt; data;
+public:
+	template&lt;typename... Args&gt;
+	void emplace(Args&amp;&amp;... args);
+
+	void pop();
+	const T&amp; top() const;
+	bool empty() const;
+	std::size_t size() const;
+};</code></pre>
+						</div>
+						<div class="fragment" style="flex: 1;">
+							<p>stack.cpp</p>
+							<pre><code class="language-cpp" data-line-numbers="1|3-18|20-22|23-25">#include "stack.hpp"
+
+template&lt;typename T&gt;
+template&lt;typename... Args&gt;
+void Stack&lt;T&gt;::emplace(Args&amp;&amp;... args) 
+{ data.emplace_back(std::forward&lt;Args&gt;(args)...); }
+
+template&lt;typename T&gt;
+void Stack&lt;T&gt;::pop() { data.pop_back(); }
+
+template&lt;typename T&gt;
+const T&amp; Stack&lt;T&gt;::top() const { return data.back(); }
+
+template&lt;typename T&gt;
+bool Stack&lt;T&gt;::empty() const { return data.empty(); }
+
+template&lt;typename T&gt;
+std::size_t Stack&lt;T&gt;::size() const { return data.size(); }
+
+// Tell the compiler to instantiate all the member functions of
+// Stack&lt;int&gt; in this translation unit
+template class Stack&lt;int&gt;;
+// Tell the compiler to instantiate
+// Stack&lt;int&gt;::emplace&lt;int&gt;(int&amp;&amp;)
+template void Stack&lt;int&gt;::emplace&lt;int&gt;(int&amp;&amp;);</code></pre>
+						</div>
+					</div>
+				</div>
+				<p class="fragment">⚠️ The client code can only use the explicitly instantiated types</p>
+				<p class="fragment">💡 The best practice is to define the implementation inline</p>
+			</section>
+
+			<section data-auto-animate>
+				<div
+					style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
+					<h1 style="font-size: clamp(2.2em, 4vw, 4em); margin-bottom: 0.4em;">Let's see templates in action
+					</h1>
+					<p style="font-size: clamp(2.1em, 1.8vw, 1.7em); margin: 0;">🚀🚀🚀🚀🚀🚀🚀</p>
+				</div>
+			</section>
+
+			<!-- Slide: Generic serializer and dependency injection -->
+			<section data-auto-animate>
+				<h1>Generic serializer and dependency injection</h1>
+				<pre><code class="language-cpp" data-line-numbers>template &lt;typename Sink&gt;
+void dump_object(const Object&amp; d)
+{
+	Sink::begin_object("object");
+	Sink::field("id", d.id());
+	Sink::field("name", d.name());
+	Sink::end_object();
+}</code></pre>
+				<div class="r-stack">
+					<div class="fragment current-visible">
+						<pre><code class="language-cpp" data-line-numbers>struct JsonSink {
+	static void begin_object(std::string_view n) { std::cout &lt;&lt; '{'; }
+	static void field(std::string_view k, int v) {
+		std::cout &lt;&lt; '"' &lt;&lt; k &lt;&lt; "\": " &lt;&lt; v &lt;&lt; ',';
+	}
+	static void field(std::string_view k, std::string_view v) {
+		std::cout &lt;&lt; '"' &lt;&lt; k &lt;&lt; "\": \"" &lt;&lt; v &lt;&lt; "\",";
+	}
+	static void end_object() { std::cout &lt;&lt; '}'; }
+};</code></pre>
+					</div>
+					<div class="fragment current-visible">
+						<pre><code class="language-cpp" data-line-numbers>struct YamlSink {
+	static void begin_object(std::string_view n) { std::cout &lt;&lt; n &lt;&lt; ":\n"; }
+	static void field(std::string_view k, int v) {
+		std::cout &lt;&lt; "  " &lt;&lt; k &lt;&lt; ": " &lt;&lt; v &lt;&lt; '\n';
+	}
+	static void field(std::string_view k, std::string_view v) {
+		std::cout &lt;&lt; "  " &lt;&lt; k &lt;&lt; ": \"" &lt;&lt; v &lt;&lt; "\"\n";
+	}
+	static void end_object() {}
+};</code></pre>
+					</div>
+					<div class="fragment"
+						style="display: flex; gap: 36px; justify-content: space-between; align-items: flex-start;">
+						<div style="flex: 1;">
+							<p>Main function</p>
+							<pre><code class="language-cpp" data-line-numbers>int main() {
+	Object apple{1, "apple"};
+	std::cout &lt;&lt; "---------JSON-----------\n";
+	dump_object&lt;JsonSink&gt;(apple);
+	std::cout &lt;&lt; "---------YAML-----------\n";
+	dump_object&lt;YamlSink&gt;(apple);
+}</code></pre>
+							<p><a href="https://godbolt.org/z/5PMxWadrW">https://godbolt.org/z/5PMxWadrW</a></p>
+						</div>
+						<div style="flex: 1;">
+							<p>Output:</p>
+							<pre><code class="language-console">---------JSON-----------
+"object": {
+  "id": 1,
+  "name": "apple",
+}
+---------YAML-----------
+object:
+  id: 1
+  name: "apple"</code></pre>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Slide: Templates as generic abstraction layer. Requirements -->
+			<section data-auto-animate>
+				<h1>Generic abstraction layer</h1>
+				<h2>Register bank manager</h2>
+				<ul>
+					<li>Different hardware layouts are supported
+						<ul>
+							<li>Registers acceses are flexible to the HAL implementation</li>
+						</ul>
+					</li>
+					<li>Bank-swap policy is decoupled from register access</li>
+					<li>The client code is unaware of the active bank</li>
+				</ul>
+			</section>
+
+			<!-- Slide: Templates as generic abstraction layer. Code -->
+			<section class="slide-register-bank-code" data-auto-animate>
+				<h1>Generic abstraction layer</h1>
+				<h2>Register bank manager</h2>
+				<p>Client code</p>
+				<pre><code class="language-cpp" data-line-numbers="3|5-7|8-10|11">int main()
+{
+	ActiveStandbyBank&lt;MotorConfigHal&gt; mgr(MotorConfigHal{});
+
+	if(!mgr.write("speed_rpm", 1500)) {
+		std::cerr &lt;&lt; "Cannot write speed_rpm\n";
+	}
+	if(!mgr.write("torque_limit", 80)) {
+		std::cerr &lt;&lt; "Cannot write torque_limit\n";
+	}
+	mgr.commit();
+}</code></pre>
+
+				<p>HAL implementation</p>
+				<pre data-mark-target="motorHal"><code class="language-cpp" data-line-numbers="|1|3-6|8|9-18|20-23">class MotorConfigHal
+{
+private:
+	struct Config { uint32_t speed_rpm = 0; 
+											uint32_t torque_limit = 0; };
+	Config m_banks[2]{};
+public:
+	bool write(	uint8_t bank_id, std::string_view field, uint32_t value)
+	{
+		if (field == "speed_rpm") {
+			m_banks[bank_id].speed_rpm = value;
+			return true;
+		} else if (field == "torque_limit") {
+			m_banks[bank_id].torque_limit = value;
+			return true;
+		}
+		return false;
+	}
+
+	void commit(uint8_t bank_id)
+	{
+		// action to commit the bank
+	}
+};</code></pre>
+				<script>
+					window.revealReadyQueue.push(() => {
+						setTimeout(() => highlightMarkedCode('motorHal', [
+							['bank_id', 1],
+							['bank_id', 4],
+						]), 0);
+						setTimeout(() => highlightMarkedCode('motorHal', [
+							['bank_id', 1],
+							['bank_id', 4],
+						]), 100);
+						Reveal.on('fragmentshown', (event) => {
+							if (event.slide && event.slide.classList.contains('slide-register-bank-code')) {
+								setTimeout(() => highlightMarkedCode('motorHal', [
+									['bank_id', 1],
+									['bank_id', 4],
+								]), 0);
+								setTimeout(() => highlightMarkedCode('motorHal', [
+									['bank_id', 1],
+									['bank_id', 4],
+								]), 100);
+							}
+						});
+					});
+				</script>
+			</section>
+
+			<!-- Slide: Templates as generic abstraction layer. ActiveStandbyBank implementation -->
+			<section data-auto-animate>
+				<h1>Generic abstraction layer</h1>
+				<h2>Register bank manager</h2>
+				<p>ActiveStandbyBank implementation</p>
+				<pre data-mark-target="activeStandbyBank"><code class="language-cpp" data-line-numbers="1-2|4-6|8-9,11-12|14-15|16-18|20-26|">template &lt;typename Hal&gt;
+class ActiveStandbyBank
+{
+private:
+	Hal			m_hal;
+	uint8_t	m_active_id = 0;
+public:
+	explicit ActiveStandbyBank(Hal hal)
+		: m_hal(std::move(hal)){}
+
+	uint8_t active_id() const  { return m_active_id; }
+	uint8_t standby_id() const { return (m_active_id + 1) % 2; }
+
+	template &lt;typename... Args&gt;
+	decltype(auto) write(Args&amp;&amp;... args)
+	{
+		return m_hal.write(standby_id(), std::forward&lt;Args&gt;(args)...);
+	}
+
+	template &lt;typename... Args&gt;
+	decltype(auto) commit(Args&amp;&amp;... args)
+	{
+		const auto current_standby_id = standby_id();
+		m_active_id = current_standby_id;
+		return m_hal.commit(current_standby_id, std::forward&lt;Args&gt;(args)...);
+	}
+};</code></pre>
+				<p><a href="https://godbolt.org/z/zd5EG59P4">https://godbolt.org/z/zd5EG59P4</a></p>
+				<script>
+					window.revealReadyQueue.push(() => {
+						setTimeout(() => highlightMarkedCode('activeStandbyBank', [
+							['decltype(auto)', 1],
+							['decltype(auto)', 2],
+							['standby_id()', 2],
+							['current_standby_id', 3],
+						]), 0);
+						setTimeout(() => highlightMarkedCode('activeStandbyBank', [
+							['decltype(auto)', 1],
+							['decltype(auto)', 2],
+							['standby_id()', 2],
+							['current_standby_id', 3],
+						]), 100);
+					});
+				</script>
+			</section>
+
+			<!-- Slide: Flexible and safe register accesses definition -->
+			<section data-auto-animate>
+				<h1>Flexible and safe register accesses</h1>
+				<h2>Concept</h2>
+				<ul>
+					<li>Hardware is programmed through registers</li>
+					<li>Each register has fields of different sizes</li>
+				</ul>
+				<p>For instance: ARM PL011 UART has a register called UARTLCR_H</p>
+				<div style="display: flex; gap: 28px; align-items: flex-start;">
+					<table style="flex: 1; font-size: 0.88em;">
+						<thead>
+							<tr>
+								<th>Bits</th>
+								<th>Name</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>15:8</td>
+								<td>Reserved</td>
+							</tr>
+							<tr>
+								<td>7</td>
+								<td>SPS - Stick parity select</td>
+							</tr>
+							<tr>
+								<td>6:5</td>
+								<td>WLEN - Word length</td>
+							</tr>
+							<tr>
+								<td>4</td>
+								<td>FEN - Enable FIFOs</td>
+							</tr>
+						</tbody>
+					</table>
+					<table style="flex: 1; font-size: 0.88em;">
+						<thead>
+							<tr>
+								<th>Bits</th>
+								<th>Name</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>3</td>
+								<td>STP2 - Two stop bits select</td>
+							</tr>
+							<tr>
+								<td>2</td>
+								<td>EPS - Even parity select</td>
+							</tr>
+							<tr>
+								<td>1</td>
+								<td>PEN - Parity enable</td>
+							</tr>
+							<tr>
+								<td>0</td>
+								<td>BRK - Send break</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			<!-- Slide: Flexible and safe register accesses goal -->
+			<section data-auto-animate>
+				<h1>Flexible and safe register accesses</h1>
+				<h2>Goal</h2>
+				<ul>
+					<li>Provide a generic abstraction layer to access registers</li>
+					<li>Provide a safe way to access registers</li>
+					<li>Provide a flexible way to access registers</li>
+				</ul>
+				<div style="display: flex; gap: 28px; align-items: flex-start;">
+					<pre style="flex: 1;"><code class="language-cpp" data-line-numbers>UARTLCR_H lcrh{};
+
+lcrh.write(
+	// 8 data bits
+	UARTLCR_H::WLEN{UARTLCR_H::WLEN::WLEN_8BIT},
+	// enable FIFOs
+	UARTLCR_H::FEN{1},
+	// no parity
+	UARTLCR_H::PEN{0}
+);</code></pre>
+					<pre style="flex: 1;"><code class="language-cpp" data-line-numbers>UARTLCR_H lcrh{};
+
+lcrh.write(
+	// enable FIFOs
+	UARTLCR_H::FEN{1},
+	// no parity
+	UARTLCR_H::PEN{0},
+	// 8 data bits
+	UARTLCR_H::WLEN{UARTLCR_H::WLEN::WLEN_8BIT}
+);</code></pre>
+				</div>
+			</section>
+
+			<!-- Slide: Flexible and safe register accesses register implementation -->
+			<section data-auto-animate>
+				<h1>Flexible and safe register accesses</h1>
+				<h2>Register abstraction implementation</h2>
+				<pre><code class="language-cpp" data-line-numbers="|2-3|4-10|11-12|14,17-18,20|15-16,19" data-fragment-index="1">class Register{
+private:
+  volatile uint32_t* value;
+public:
+  Register(uintptr_t regAddr):value{reinterpret_cast&lt;volatile uint32_t*&gt;(regAddr)}
+  {}
+  volatile uint32_t&amp; operator*() const
+  {
+    return *value;
+  }
+  template &lt;typename ...Args&gt;
+  void write(Args... args)
+  {
+    uint32_t curVal = *value; // Read value
+    ([&amp;]
+    {
+      curVal &amp;= ~args.FIELD_MASK; // Clear the field
+      curVal |= (args.value &lt;&lt; args.FIELD_OFFSET) &amp; args.FIELD_MASK; // Set the field
+    }(), ...);
+    *value = curVal; // Write back value
+  }
+};</code></pre>
+			<p class="fragment" data-fragment-index="5">ℹ️ The fold expression repeats the lambda for each field: clear then set</p>
+			</section>
+
+			<!-- Slide: Flexible and safe register accesses register implementation -->
+			<section data-auto-animate>
+				<h1>Flexible and safe register accesses</h1>
+				<h2>UARTLCR_H implementation</h2>
+				<pre><code class="language-cpp" data-line-numbers="|1|2|4|5-7|8-9|12-18">struct UARTLCR_H : public Register {
+	UARTLCR_H(uintptr_t regAddr):Register{regAddr} {}
+
+	struct BRK {
+		static constexpr uint32_t FIELD_OFFSET = 0;
+		static constexpr uint32_t FIELD_SIZE = 1;
+		static constexpr uint32_t FIELD_MASK = ((1 &lt;&lt; FIELD_SIZE) - 1) &lt;&lt; FIELD_OFFSET;
+		uint32_t value;
+		BRK(uint32_t value):value{value} {}
+	};
+
+	struct PEN {
+		static constexpr uint32_t FIELD_OFFSET = 1;
+		static constexpr uint32_t FIELD_SIZE = 1;
+		static constexpr uint32_t FIELD_MASK = ((1 &lt;&lt; FIELD_SIZE) - 1) &lt;&lt; FIELD_OFFSET;
+		uint32_t value;
+		PEN(uint32_t value):value{value} {}
+	};
+
+    // Other fields implementation...
+};</code></pre>
+<p class="fragment">ℹ️ Each sub-structure implements the implicit requirements of the register abstraction</p>
+			</section>
+
+			<!-- Slide: Flexible and safe register accesses zero cost -->
+			<section data-auto-animate>
+				<h1>Flexible and safe register accesses</h1>
+				<h2>True zero cost abstraction</h2>
+				<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
+					<div style="flex: 1;">
+						<pre><code class="language-cpp">uint32_t testValueAbstraction() {
+	uint32_t v{0};
+	UARTLCR_H lcrh{reinterpret_cast&lt;uintptr_t&gt;(&amp;v)};
+	lcrh.write(
+		UARTLCR_H::WLEN{UARTLCR_H::WLEN::WLEN_8BIT},
+		UARTLCR_H::FEN{1},
+		UARTLCR_H::PEN{0}
+	);
+	return *lcrh;
+}</code></pre>
+						<pre><code class="armasm">testValueAbstraction():
+		sub     sp, sp, #16
+		str     wzr, [sp, 12]
+		ldr     w0, [sp, 12]
+		and     w0, w0, -3
+		orr     w0, w0, 112
+		str     w0, [sp, 12]
+		ldr     w0, [sp, 12]
+		add     sp, sp, 16
+		ret</code></pre>
+					</div>
+					<div style="flex: 1;">
+						<pre><code class="language-cpp">uint32_t testValueDirect() {
+	volatile uint32_t v{0};
+
+	v = (v &amp; ~0x72) | 0x70;
+
+	return v;
+}
+
+
+
+</code></pre>
+						<pre><code class="armasm">testValueDirect():
+		sub     sp, sp, #16
+		str     wzr, [sp, 12]
+		ldr     w0, [sp, 12]
+		and     w0, w0, -3
+		orr     w0, w0, 112
+		str     w0, [sp, 12]
+		ldr     w0, [sp, 12]
+		add     sp, sp, 16
+		ret</code></pre>
+					</div>
+				</div>
+				<a href="https://godbolt.org/z/Mes196d3e" style="position: absolute; bottom: 0.4em; right: 0.8em; font-size: 0.8em; opacity: 0.7;">https://godbolt.org/z/Mes196d3e</a>
+			</section>
+
+			<!-- Slide: Variadic templates -->
+			<!---  Variadic templates: return type isn't fixed (to keep?)-->
+			<section data-auto-animate>
+				<h1>Variadic templates: return type isn't fixed (to keep?)</h1>
+				<pre><code class="language-cpp">template&lt;typename T&gt;
+T sum(T value) { return value; }
+
+template&lt;typename T, typename... Args&gt;
+auto sum(T first, Args... rest) {
+	return first + sum(rest...);
+}</code></pre>
+				<p class="fragment"><code>sum(1, 2, 3)</code> deduces <code>int</code> &mdash;
+					<code>sum(1, 2.5, 3)</code> deduces <code>double</code>
+				</p>
+				<p class="fragment">pre-C++14, you'd write the expression twice:</p>
+				<pre class="fragment"><code class="language-cpp">template&lt;typename T, typename... Args&gt;
+auto sum(T first, Args... rest)
+	-&gt; decltype(first + sum(rest...));</code></pre>
+				<p class="fragment">once in the trailing return type, once in the body &mdash; <code>auto</code> makes
+					the body the single source of truth</p>
+			</section>
+
+			<section data-auto-animate>
+				<h1>Conclusion</h1>
+				<ul>
+					<li class="fragment">Templates let you write <strong>one definition</strong> that works for many types ➡️ less duplication, more reuse</li>
+					<li class="fragment">Template argument deduction handles most cases; understand CV-qualifier and reference rules to avoid surprises</li>
+					<li class="fragment">Explicit specialization lets you <strong>opt out</strong> for specific types when the generic version isn't right</li>
+					<li class="fragment">Variadic templates and perfect forwarding unlock <strong>flexible, zero-overhead abstractions</strong></li>
+					<li class="fragment">Class and variable templates extend the same ideas to types and constants</li>
+					<li class="fragment">Concepts (C++20) add <strong>expressive constraints</strong> ➡️ better errors and self-documenting interfaces</li>
+					<li class="fragment">Real-world payoff: generic serializers, dependency injection, and type-safe register abstractions with <strong>no runtime cost</strong></li>
+				</ul>
+			</section>
+
+			<script src="dist/reveal.js"></script>
+			<script src="dist/plugin/notes.js"></script>
+			<script src="dist/plugin/markdown.js"></script>
+			<script src="dist/plugin/highlight.js"></script>
+			<script>
+				function drainRevealReadyQueue() {
+					const queue = window.revealReadyQueue.splice(0, window.revealReadyQueue.length);
+					queue.forEach((fn) => fn());
+				}
+
+				// More info about initialization & config:
+				// - https://revealjs.com/initialization/
+				// - https://revealjs.com/config/
+				Reveal.initialize({
+					hash: true,
+					slideNumber: 'c/t',
+					width: 1440,
+					height: 1080,
+					margin: 0.04,
+					minScale: 0.2,
+					maxScale: 2.0,
+					// Learn about plugins: https://revealjs.com/plugins/
+					plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
+				});
+				Reveal.on('ready', () => {
+					window.revealReadyQueue.forEach((fn) => fn());
+				});
+			</script>
+</body>
+
 </html>
