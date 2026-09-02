@@ -281,7 +281,7 @@ mySwap(e, f); // ❌ Does not compile</code></pre>
 			<section data-auto-animate>
 				<h1>Function template</h1>
 				<h2>Defines a family of functions</h2>
-				<p><code>auto</code> parameters are still templates</p>
+				<p><code>auto</code> parameters are templates</p>
 				<p>Abbreviated function template syntax (C++20)</p>
 				<p>ℹ️ Each <code>auto</code> introduces a hidden template parameter</p>
 				<pre><code class="language-cpp" data-line-numbers>void mySwap(auto&amp; a, auto&amp; b) {
@@ -291,13 +291,14 @@ mySwap(e, f); // ❌ Does not compile</code></pre>
 }</code></pre>
 				<p class="fragment">💡 In order to retrieve the type of an <code class="language-cpp">auto</code>
 					parameter, use <code>decltype(...)</code></p>
+				<p class="fragment">⚠️ Type of <code>a</code> and <code>b</code> can be different</p>
 			</section>
 
 			<!-- Slide: Function template implicit requirements -->
 			<section data-auto-animate>
 				<h1>Function template</h1>
 				<h2>Implicit requirements</h2>
-				<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+				<pre><code class="language-cpp" data-line-numbers>template&lt;typename Swappable&gt;
 void mySwap(Swappable&amp; a, Swappable&amp; b) {
 	Swappable tmp = std::move(a);
 	a = std::move(b);
@@ -306,9 +307,11 @@ void mySwap(Swappable&amp; a, Swappable&amp; b) {
 				<p>What are the implicit requirements for the type <code>T</code>?</p>
 				<p>🙋‍♂️🙋‍♀️</p>
 				<ul class="fragment">
-					<li>Must be move constructible i.e have a valid <code class="language-cpp">T(T&amp;&amp;)</code> constructor
+					<li>Must be move constructible i.e have a valid <code class="language-cpp">T(T&amp;&amp;)</code>
+						constructor
 					</li>
-					<li>Must be move assignable i.e have a valid <code class="language-cpp">T&amp; operator=(T&amp;&amp;)</code>
+					<li>Must be move assignable i.e have a valid <code
+							class="language-cpp">T&amp; operator=(T&amp;&amp;)</code>
 						assignment operator</li>
 				</ul>
 				<div class="fragment">
@@ -439,7 +442,7 @@ void myFun() {
 			<section data-auto-animate>
 				<h1>Template argument deduction</h1>
 				<h2>CV qualifier deduction</h2>
-				<p>Depending on whether the parameter type is a reference or not, cv-qualifiers are be deduced
+				<p>Depending on whether the parameter type is a reference or not, cv-qualifiers are deduced
 					differently.</p>
 				<div style="display: flex; gap: 40px; justify-content: space-between;">
 					<div style="flex: 1;">
@@ -518,11 +521,10 @@ arrayRefFunc(arr); // T == int[5] (reference keeps the array type)</code></pre>
 			</section>
 
 			<!-- Slide: More on reference parameters -->
-			<!--- Do I want to keep this slide?-->
 			<section data-auto-animate>
-				<h1>Template argument deduction (to keep?)</h1>
+				<h1>Template argument deduction</h1>
 				<h2>More on reference parameters</h2>
-				<p>⚠️When the function parameter is a reference, its type also keep pointers⚠️</p>
+				<p>⚠️ A reference parameter can deduce a pointer type ⚠️</p>
 				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
 void increment(T&amp; value) {
 	++value;
@@ -548,7 +550,7 @@ printf("%d\n", *retriesPtr); // 💥 disaster 💥</code></pre>
 				<h2>Reference parameter take away</h2>
 				<p class="fragment">⚠️Think twice when using non-const reference parameters</p>
 				<p class="fragment">💡Make use of <mark>&lt;type_traits&gt;</mark> e.g. <code>std::is_pointer</code>,
-					<code>std::is_const</code>, ... to validate the template argument type at compile type
+					<code>std::is_const</code>, ... to validate the template argument type at compile time
 				</p>
 				<p class="fragment">💡From C++20, use concepts</p>
 			</section>
@@ -656,7 +658,7 @@ print(g); // 👍</code></pre>
 			<section data-auto-animate>
 				<h1>Putting templates to work</h1>
 				<h2>Generic programming</h2>
-				<p>Polymorphic behaviour in between unrelated types</p>
+				<p>Polymorphic behaviour between unrelated types</p>
 				<pre><code class="language-cpp" data-line-numbers="1-2|4-6,8-10|12-14,16-18|20-28,30-34">template&lt;typename T&gt;
 int legs(T&amp; ll) { return ll.legs(); }
 
@@ -766,6 +768,7 @@ void wrapper(Args&amp;&amp;... args) {
 				<h1>Perfect forwarding</h1>
 				<h2>The <code>std::forward</code> Catch</h2>
 				<p>Only works when the parameter is a templated forwarding reference</p>
+				<p>Forwarding reference are also called universal references</p>
 				<pre><code class="language-cpp" data-line-numbers>template &lt;typename T&gt;
 void relay(T&amp;&amp; arg) {
 	consume(std::forward&lt;T&gt;(arg));
@@ -774,7 +777,8 @@ void relay(T&amp;&amp; arg) {
 					<p>It doesn't work on:</p>
 					<ul>
 						<li class="fragment">Fixed type e.g.<code>std::vector&lt;T&gt;&amp;&amp;</code></li>
-						<li class="fragment"><code>const T&amp;&amp;</code>: it is not a forwarding reference, only binds to
+						<li class="fragment"><code>const T&amp;&amp;</code>: it is not a forwarding reference, only
+							binds to
 							const rvalues</li>
 					</ul>
 				</div>
@@ -792,17 +796,18 @@ struct Object {
 	void relay(T&amp;&amp; arg) { // looks like T&amp;&amp;... but T is already fixed 
 		consume(std::forward&lt;T&gt;(arg));
 	}
-};
-  </code></pre>
-				<p>Example specialization: <code>Object&lt;int&gt; w;</code></p>
-				<pre><code class="language-cpp" data-line-numbers>template&lt;&gt;
+};</code></pre>
+				<div class="fragment">
+					<p>Example of instantiation: <code>Object&lt;int&gt; w;</code></p>
+					<pre><code class="language-cpp" data-line-numbers>template&lt;&gt;
 struct Object&lt;int&gt; {
 	void relay(int&amp;&amp; arg) { // ⚠️ Only accept rvalues references of type int
 		consume(std::forward&lt;int&gt;(arg));
 	}
 };</code></pre>
+				</div>
 				<div class="fragment"
-					style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(92%, 980px); padding: 24px 28px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
+					style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(92%, 1400px); padding: 24px 28px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
 					<p style="text-align: center; margin-bottom: 0.4em;"><strong>Fix: make <code>relay</code>
 							templated</strong></p>
 					<pre><code class="language-cpp" data-line-numbers>template &lt;typename T&gt;
@@ -812,6 +817,7 @@ struct Object {
 		consume(std::forward&lt;U&gt;(arg));
 	}
 };</code></pre>
+				<p><a href="https://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers" style="font-size: 0.95em;">https://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers</a></p>
 				</div>
 			</section>
 
@@ -843,7 +849,8 @@ relay(s);                 // arg deduced as std::string&amp;  -> lvalue preserve
 relay(std::move(s));      // arg deduced as std::string&amp;&amp; -> rvalue preserved
   </code></pre>
 				<ul>
-					<li class="fragment">Generic lambda's <code>auto&amp;&amp;</code> deduces per call &rarr; same rules as a
+					<li class="fragment">Generic lambda's <code>auto&amp;&amp;</code> deduces per call &rarr; same rules
+						as a
 						function template's <code>T&amp;&amp;</code></li>
 					<li class="fragment">No named <code>T</code> to forward with &rarr; use <code>decltype(arg)</code>
 						instead</li>
@@ -952,8 +959,8 @@ public:
 
 template &lt;typename T&gt; // Class template parameter list
 template &lt;typename... Args&gt; // Member function template parameter list
-void Stack&lt;T&gt;::emplace(Args&amp;&amp; value) {
-	data.emplace_back(std::forward&lt;Args&gt;(value));
+void Stack&lt;T&gt;::emplace(Args&amp;&amp; ...value) {
+	data.emplace_back(std::forward&lt;Args&gt;(value)...);
 }</code></pre>
 			</section>
 
@@ -1095,7 +1102,7 @@ object:
 				<ul>
 					<li>Different hardware layouts are supported
 						<ul>
-							<li>Registers acceses are flexible to the HAL implementation</li>
+							<li>Registers access are flexible to the HAL implementation</li>
 						</ul>
 					</li>
 					<li>Bank-swap policy is decoupled from register access</li>
@@ -1347,7 +1354,8 @@ public:
     *value = curVal; // Write back value
   }
 };</code></pre>
-			<p class="fragment" data-fragment-index="5">ℹ️ The fold expression repeats the lambda for each field: clear then set</p>
+				<p class="fragment" data-fragment-index="5">ℹ️ The fold expression repeats the lambda for each field:
+					clear then set</p>
 			</section>
 
 			<!-- Slide: Flexible and safe register accesses register implementation -->
@@ -1375,7 +1383,8 @@ public:
 
     // Other fields implementation...
 };</code></pre>
-<p class="fragment">ℹ️ Each sub-structure implements the implicit requirements of the register abstraction</p>
+				<p class="fragment">ℹ️ Each sub-structure implements the implicit requirements of the register
+					abstraction</p>
 			</section>
 
 			<!-- Slide: Flexible and safe register accesses zero cost -->
@@ -1429,7 +1438,8 @@ public:
 		ret</code></pre>
 					</div>
 				</div>
-				<a href="https://godbolt.org/z/Mes196d3e" style="position: absolute; bottom: 0.4em; right: 0.8em; font-size: 0.8em; opacity: 0.7;">https://godbolt.org/z/Mes196d3e</a>
+				<a href="https://godbolt.org/z/Mes196d3e"
+					style="position: absolute; bottom: 0.4em; right: 0.8em; font-size: 0.8em; opacity: 0.7;">https://godbolt.org/z/Mes196d3e</a>
 			</section>
 
 			<!-- Slide: Variadic templates -->
@@ -1457,13 +1467,19 @@ auto sum(T first, Args... rest)
 			<section data-auto-animate>
 				<h1>Conclusion</h1>
 				<ul>
-					<li class="fragment">Templates let you write <strong>one definition</strong> that works for many types ➡️ less duplication, more reuse</li>
-					<li class="fragment">Template argument deduction handles most cases; understand CV-qualifier and reference rules to avoid surprises</li>
-					<li class="fragment">Explicit specialization lets you <strong>opt out</strong> for specific types when the generic version isn't right</li>
-					<li class="fragment">Variadic templates and perfect forwarding unlock <strong>flexible, zero-overhead abstractions</strong></li>
+					<li class="fragment">Templates let you write <strong>one definition</strong> that works for many
+						types ➡️ less duplication, more reuse</li>
+					<li class="fragment">Template argument deduction handles most cases; understand CV-qualifier and
+						reference rules to avoid surprises</li>
+					<li class="fragment">Explicit specialization lets you <strong>opt out</strong> for specific types
+						when the generic version isn't right</li>
+					<li class="fragment">Variadic templates and perfect forwarding unlock <strong>flexible,
+							zero-overhead abstractions</strong></li>
 					<li class="fragment">Class and variable templates extend the same ideas to types and constants</li>
-					<li class="fragment">Concepts (C++20) add <strong>expressive constraints</strong> ➡️ better errors and self-documenting interfaces</li>
-					<li class="fragment">Real-world payoff: generic serializers, dependency injection, and type-safe register abstractions with <strong>no runtime cost</strong></li>
+					<li class="fragment">Concepts (C++20) add <strong>expressive constraints</strong> ➡️ better errors
+						and self-documenting interfaces</li>
+					<li class="fragment">Real-world payoff: generic serializers, dependency injection, and type-safe
+						register abstractions with <strong>no runtime cost</strong></li>
 				</ul>
 			</section>
 
