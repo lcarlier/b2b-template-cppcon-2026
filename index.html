@@ -235,8 +235,8 @@
 				</p>
 				<p>A template is a C++ entity that defines one of the following:</p>
 				<ul>
-					<li>a family of classes (class template), which may be nested classes</li>
 					<li>a family of functions (function template), which may be member functions</li>
+					<li>a family of classes (class template), which may be nested classes</li>
 
 					<li>an alias to a family of types (alias template) <code
 							style="background-color: var(--code-background);">(since C++11)</code></li>
@@ -254,8 +254,8 @@
 declaration</code></pre>
 				<p><code>parameter-list</code> can be:</p>
 				<ul>
-					<li>non type template parameter e.g. <code>int</code>, enum value, constexpr value</li>
-					<li>type parameter e.g. <code>std::string</code></li>
+					<li>type parameter e.g. <code>int</code>, <code>std::string</code></li>
+					<li>non type template parameter (aka NTTP) e.g. enum value, constexpr value</li>
 					<li>template parameter pack using ellipsis <code
 							style="background-color: var(--code-background);">...</code></li>
 					<li>template template parameter e.g. <code>template&lt;typename&gt; class</code></li>
@@ -323,10 +323,10 @@ void mySwap(Swappable&amp; a, Swappable&amp; b) {
 }</code></pre>
 					</div>
 					<div style="flex: 1;">
-						<pre><code class="language-cpp" data-line-numbers>int a = 5, b = 10;
+						<pre class="fragment"><code class="language-cpp" data-line-numbers>int a = 5, b = 10;
 mySwap(a, b);
 assert(a == 10 &amp;&amp; b == 5);</code></pre>
-						<pre><code class="language-cpp" data-line-numbers>float a = 3.14, b = 2.71;
+						<pre class="fragment"><code class="language-cpp" data-line-numbers>float a = 3.14, b = 2.71;
 mySwap(a, b);
 assert(a == 2.71 &amp;&amp; b == 3.14);</code></pre>
 					</div>
@@ -429,7 +429,7 @@ T myMax(T a, T b) {
 	return a &gt; b ? a : b;
 }
 
-void myFun() {
+void fun() {
 	int a = 5, b = 4;
 	auto c = myMax(a, b);
 	static_assert(std::is_same_v&lt;decltype(c), int&gt;);
@@ -448,7 +448,7 @@ T myMax(T a, T b) {
 	return a &gt; b ? a : b;
 }
 
-void myFun() {
+void fun() {
 	auto c = myMax(5.1, 5.2);
 }</code></pre>
 				<p>What type is <code>T</code> deduced ?</p>
@@ -469,7 +469,7 @@ T myMax(T a, T b) {
 	return a &gt; b ? a : b;
 }
 
-void myFun() {
+void fun() {
 	auto c = myMax&lt;float&gt;(5.1, 5.2);
 }</code></pre>
 				<script>
@@ -565,7 +565,7 @@ funcRef(arr);    // T == int[5] (reference keeps the array type)</code></pre>
 				<h1>Template argument deduction</h1>
 				<h2>More on reference parameters</h2>
 				<p>⚠️ A reference parameter can deduce a pointer type ⚠️</p>
-				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers="|1-4|6-7|9-11">template&lt;typename T&gt;
 void increment(T&amp; value) {
 	++value;
 }
@@ -574,7 +574,7 @@ int retries = 0;
 int* retriesPtr = &amp;retries;
 // ...
 // 😱 Forgot '*' 😱.
-increment(retriesPtr); // T is int* i.e. type of value is int*&amp;
+increment(retriesPtr); // T is deduced asint* i.e. type of value is int*&amp;
 printf("%d\n", *retriesPtr); // 💥 disaster 💥</code></pre>
 				<script>
 					window.revealReadyQueue.push(() => {
@@ -590,7 +590,8 @@ printf("%d\n", *retriesPtr); // 💥 disaster 💥</code></pre>
 				<h2>Reference parameter take away</h2>
 				<p class="fragment">⚠️Think twice when using non-const reference parameters</p>
 				<p class="fragment">💡Make use of <mark>&lt;type_traits&gt;</mark> e.g. <code>std::is_pointer</code>,
-					<code>std::is_const</code>, ... to validate the template argument type at compile time
+					<code>std::is_const</code>, ... and <code>static_assert</code> to validate the template argument
+					type at compile time
 				</p>
 				<p class="fragment">💡From C++20, use concepts</p>
 			</section>
@@ -636,7 +637,7 @@ T myMax(T a, T b) {
 T myMax(T a, T b) {
 	return a &gt; b ? a : b;
 }</code></pre>
-				<p>What is the result of the following call? 🤔</p>
+				<p>What does the following call return? 🤔</p>
 				<pre><code class="language-cpp">myMax("hello", "world");</code></pre>
 				<p>🙋‍♂️🙋‍♀️</p>
 				<div class="fragment">
@@ -808,7 +809,7 @@ print(g); // 👍</code></pre>
 				<h1>Putting templates to work</h1>
 				<h2>Generic programming</h2>
 				<p>Polymorphic behaviour between unrelated types</p>
-				<pre><code class="language-cpp" data-line-numbers="1-2|4-6,8-10|12-14,16-18|20-28,30-34">template&lt;typename T&gt;
+				<pre><code class="language-cpp" data-line-numbers="|1-2|4-6,8-10|12-14,16-18|20-28,30-34">template&lt;typename T&gt;
 constexpr int legs(T&amp; ll) { return ll.legs(); }
 
 struct Cow {  // not in any class hiearchy
@@ -852,9 +853,45 @@ int main()
 				<p>Variadic templates are templates that take a variable number of template parameters.</p>
 				<p>Ellipsis (<code>...</code>) is used to tell which parameter is variadic and where it expands</p>
 				<div class="fragment">
-					<pre data-mark-target="variadicPrint"><code class="language-cpp" data-line-numbers>// Base case: stops the recursion
+					<pre data-mark-target="sum_all"><code class="language-cpp" data-line-numbers>template&lt;typename... Ts&gt;
+int sum_all(Ts... args)
+{
+    std::array&lt;int, sizeof...(Ts)&gt; arr = { args... }; // pack expansion fills the array
+    return std::accumulate(arr.begin(), arr.end(), 0);
+}</code></pre>
+				</div>
+				<div class="fragment">
+					<pre><code class="language-cpp" data-line-numbers>int total = sum_all(1, 2, 3, 4); // total == 10</code></pre>
+				</div>
+				<script>
+					window.revealReadyQueue.push(() => {
+						setTimeout(() => highlightMarkedCode('sum_all', [
+							['...', 1],
+							['...', 2],
+							['...', 4],
+						]), 100);
+					});
+				</script>
+			</section>
+
+
+			<!-- Slide: Variadic templates under the hood -->
+			<section data-auto-animate>
+				<h1>Variadic templates</h1>
+				<h2>Variadic sum_all under the hood</h2>
+				<p>sum_all generated code</p>
+				<img src="images/sum_all.png" alt="Variadic sum_all" style="height: 46vh;">
+				<p><a href="https://cppinsights.io/s/5d262841">https://cppinsights.io/s/5d262841</a></p>
+			</section>
+
+			<!-- Slide: Variadic templates -->
+			<section data-auto-animate>
+				<h1>Variadic templates</h1>
+				<p>Going through each argument one by one</p>
+				<div>
+					<pre data-mark-target="variadicPrint"><code class="language-cpp" data-line-numbers="|6-11|1-4">// Base case: stops the recursion
 void print() {
-	std::cout &lt;&lt; std::endl;
+	std::cout &lt;&lt; "\n";
 }
 
 // Recursive case: peel off the first argument, recurse on the rest
@@ -868,11 +905,18 @@ void print(T first, Args... rest) {
 					<p>Calling <code class="language-cpp">print(1, 2.5, "hello")</code> prints <code>1 2.5 hello</code>
 					</p>
 				</div>
+				<div class="fragment"
+					style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max-content; max-width: 96%; padding: 28px 30px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
+					<p style="text-align: center; margin: 0;">💡 From C++26, pack indexing lets you access a
+						parameter pack element directly, e.g. <code>args...[0]</code></p>
+				</div>
 				<script>
 					window.revealReadyQueue.push(() => {
-						markCode('variadicPrint', '...', 1);
-						markCode('variadicPrint', '...', 2);
-						markCode('variadicPrint', '...', 3);
+						setTimeout(() => highlightMarkedCode('variadicPrint', [
+							['...', 1],
+							['...', 2],
+							['...', 3],
+						]), 100);
 					});
 				</script>
 			</section>
@@ -880,7 +924,7 @@ void print(T first, Args... rest) {
 			<!-- Slide: Variadic templates under the hood -->
 			<section data-auto-animate>
 				<h1>Variadic templates</h1>
-				<h2>Under the hood</h2>
+				<h2>Variadic print under the hood</h2>
 				<p>3 print functions having the right number and types of parameters are generated</p>
 				<img src="images/variadicPrint.png" alt="Variadic print"
 					style="width: 72%; max-width: 72%; max-height: 46vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
@@ -918,10 +962,10 @@ void print(Args... args) {
 				<h1>Perfect forwarding</h1>
 				<p>Perfect forwarding is a technique that allows you to pass arguments to another function while
 					preserving their value category (lvalue or rvalue).</p>
-				<pre data-mark-target="stdForward"><code class="language-cpp" data-line-numbers>template&lt;typename... Args&gt;
-void relay(Args&amp;&amp;... args) {
-	// Forward the arguments to another function
-	consume(std::forward&lt;Args&gt;(args)...);
+				<pre data-mark-target="stdForward"><code class="language-cpp" data-line-numbers>template&lt;typename Args&gt;
+void relay(Args&amp;&amp; args) {
+	// Forward the argument to another function
+	consume(std::forward&lt;Args&gt;(args));
 }</code></pre>
 				<script>
 					window.revealReadyQueue.push(() => {
@@ -998,15 +1042,15 @@ void relay(T&amp;&amp; arg) {
 				<h2>The <code>std::forward</code> Catch</h2>
 				<p>It doesn't work on</p>
 				<ul>
-				<li>
-					<p>Fixed type</p>
-					<pre><code class="language-cpp" data-line-numbers>void relay(std::vector&lt;T&gt;&amp;&amp; arg);</code></pre>
-				</li>
-				<li>
-					<p>const rvalues</p>
-					<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+					<li>
+						<p>Fixed type</p>
+						<pre><code class="language-cpp" data-line-numbers>void relay(std::vector&lt;T&gt;&amp;&amp; arg);</code></pre>
+					</li>
+					<li>
+						<p>const rvalues</p>
+						<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
 void relay(const T&amp;&amp; arg);</code></pre>
-				</li>
+					</li>
 				</ul>
 			</section>
 
@@ -1029,20 +1073,9 @@ void relay(const T&amp;&amp; arg);</code></pre>
 				<p><code>auto&amp;&amp;</code> behaves like a forwarding reference</p>
 				<pre><code class="language-cpp" data-line-numbers>void relay(auto&amp;&amp; arg) {
 	consume(std::forward&lt;decltype(arg)&gt;(arg));
-};
-
-relay(42);              // arg deduced as int&amp;&amp;        -> rvalue preserved
-std::string s = "hi";
-relay(s);                 // arg deduced as std::string&amp;  -> lvalue preserved
-relay(std::move(s));      // arg deduced as std::string&amp;&amp; -> rvalue preserved
-  </code></pre>
-				<ul>
-					<li class="fragment">Generic lambda's <code>auto&amp;&amp;</code> deduces per call &rarr; same rules
-						as a
-						function template's <code>T&amp;&amp;</code></li>
-					<li class="fragment">No named <code>T</code> to forward with &rarr; use <code>decltype(arg)</code>
-						instead</li>
-				</ul>
+};</code></pre>
+				<p class="fragment">No named <code>T</code> to forward with &rarr; use <code>decltype(arg)</code>
+					instead</p>
 			</section>
 
 			<!-- Slide: Variable templates -->
@@ -1126,7 +1159,7 @@ Stack&lt;float&gt; floatStack;</code></pre>
 				<h1>Perfect forwarding</h1>
 				<h2>The <code>std::forward</code> Catch reloaded</h2>
 				<p>⚠️ Not all <code>T&&</code> are forwarding references</p>
-				<pre data-id="stackEmplace" data-mark-target="wrongForward"><code class="language-cpp" data-line-numbers="|1|5-6">template &lt;typename T&gt; // T deduced HERE, at instantiation
+				<pre data-id="stackEmplace" data-mark-target="wrongForward"><code class="language-cpp" data-line-numbers>template &lt;typename T&gt; // T deduced HERE, at instantiation
 class Stack {
 	// ... other member functions ...
 
@@ -1182,6 +1215,8 @@ struct Stack {
 					<p>Only the code of the used member functions is instantiated in the current translation unit</p>
 					<p><a href="https://godbolt.org/z/n7K1PKdrs">https://godbolt.org/z/n7K1PKdrs</a></p>
 				</div>
+				<p class="fragment">⚠️ The code can compile until a new member function is used that hasn't been
+					instantiated yet is called.</p>
 			</section>
 
 			<!-- Slide: Class/struct template outside class definition-->
@@ -1192,7 +1227,7 @@ struct Stack {
 				<pre><code class="language-cpp" data-line-numbers="1-8|10-11|13-17|1,13|6,14">template &lt;typename T&gt;
 class Stack {
 public:
-	const T&amp; top() const { return data.back(); }
+	const T&amp; top() const;
 	// ... other member functions ...
 	template &lt;typename... Args&gt;
 	void emplace(Args&amp;&amp;... args);
@@ -1232,7 +1267,7 @@ public:
 						</div>
 						<div class="fragment" style="flex: 1;">
 							<p>stack.cpp</p>
-							<pre><code class="language-cpp" data-line-numbers="1|3-18|20-22|23-25">#include "stack.hpp"
+							<pre><code class="language-cpp" data-line-numbers="1|3-18|20-22|24-26">#include "stack.hpp"
 
 template&lt;typename T&gt;
 template&lt;typename... Args&gt;
@@ -1254,6 +1289,7 @@ std::size_t Stack&lt;T&gt;::size() const { return data.size(); }
 // Tell the compiler to instantiate all the member functions of
 // Stack&lt;int&gt; in this translation unit
 template class Stack&lt;int&gt;;
+
 // Tell the compiler to instantiate
 // Stack&lt;int&gt;::emplace&lt;int&gt;(int&amp;&amp;)
 template void Stack&lt;int&gt;::emplace&lt;int&gt;(int&amp;&amp;);</code></pre>
@@ -1316,7 +1352,8 @@ Stack&lt;int&gt; intStack;       // primary template
 Stack&lt;int*&gt; pointerStack;  // Stack&lt;T*&gt; specialization</code></pre>
 				<p class="fragment fade-in-then-out" data-fragment-index="3" data-transition="slide-in ">
 					<code>topIsNull()</code> only makes sense for pointers, so it only exists on the
-					specialization.</p>
+					specialization.
+				</p>
 			</section>
 
 			<section data-auto-animate>
@@ -1410,16 +1447,16 @@ object:
 				<h1>Generic abstraction layer</h1>
 				<h2>Register bank manager</h2>
 				<ul>
-					<li class="fragment">Different hardware layouts are supported
-						<ul>
-							<li>Registers access are flexible to the HAL implementation</li>
-						</ul>
-					</li>
 					<li class="fragment">2 set of registers bank exists: Active and Standby</li>
 					<li class="fragment">Driver writes the standby bank and calls <code>commit()</code> to swap the bank
 					</li>
 					<li class="fragment">Bank-swap policy is decoupled from register access</li>
 					<li class="fragment">The client code is unaware of the active bank</li>
+					<li class="fragment">Different hardware layouts are supported
+						<ul>
+							<li>Registers access are flexible to the HAL implementation</li>
+						</ul>
+					</li>
 				</ul>
 			</section>
 
@@ -1428,17 +1465,24 @@ object:
 				<h1>Generic abstraction layer</h1>
 				<h2>Register bank manager</h2>
 				<p>Client code</p>
-				<pre data-mark-target="activeStandbyClient"><code class="language-cpp" data-line-numbers="|3|5-7|8-10|11">int main()
+				<pre data-mark-target="activeStandbyClient"><code class="language-cpp" data-line-numbers="|3|5-8|9-11|13|15-18">int main()
 {
 	ActiveStandbyBank&lt;MotorConfigHal&gt; mgr(MotorConfigHal{});
 
+	// Write to the current standby bank i.e bank 0
 	if(!mgr.write("speed_rpm", 1500)) {
 		std::cerr &lt;&lt; "Cannot write speed_rpm\n";
 	}
 	if(!mgr.write("torque_limit", 80)) {
 		std::cerr &lt;&lt; "Cannot write torque_limit\n";
 	}
+
 	mgr.commit();
+
+	// Now writing to bank 1 (the new standby bank)
+	if(!mgr.write("speed_rpm", 1000)) {
+		std::cerr &lt;&lt; "Cannot write speed_rpm\n";
+	}
 }</code></pre>
 
 				<p>HAL implementation</p>
@@ -1446,7 +1490,7 @@ object:
 {
 private:
 	struct Config { uint16_t speed_rpm = 0; 
-											uint16_t torque_limit = 0; };
+									uint16_t torque_limit = 0; };
 	Config m_banks[2]{};
 public:
 	bool write(	uint8_t bank_id, std::string_view field, uint16_t value)
@@ -1484,7 +1528,7 @@ public:
 				<h1>Generic abstraction layer</h1>
 				<h2>Register bank manager</h2>
 				<p>ActiveStandbyBank implementation</p>
-				<pre data-mark-target="activeStandbyBank"><code class="language-cpp" data-line-numbers="1-2|4-6|8-9,11-12|14-15|16-18|20-26">template &lt;typename Hal&gt;
+				<pre data-mark-target="activeStandbyBank"><code class="language-cpp" data-line-numbers="|1-2|4-6|8-9,11-12|14-18|14-15|16-18|20-26">template &lt;typename Hal&gt;
 class ActiveStandbyBank
 {
 private:
@@ -1598,8 +1642,10 @@ public:
 					<li>Provide a type safe way to access registers</li>
 					<li>Provide a flexible way to access registers</li>
 				</ul>
-				<div style="display: flex; gap: 28px; align-items: flex-start;">
-					<pre style="flex: 1;"><code class="language-cpp" data-line-numbers>UARTLCR_H lcrh{registerAddress};
+				<div class="fragment">
+					<p>Client code</p>
+					<div style="display: flex; gap: 28px; align-items: flex-start;">
+						<pre style="flex: 1;"><code class="language-cpp" data-line-numbers>UARTLCR_H lcrh{registerAddress};
 
 lcrh.write(
 	// 8 data bits
@@ -1609,7 +1655,7 @@ lcrh.write(
 	// no parity
 	UARTLCR_H::PEN{0b0}
 );</code></pre>
-					<pre style="flex: 1;"><code class="language-cpp" data-line-numbers>UARTLCR_H lcrh{registerAddress};
+						<pre style="flex: 1;" class="fragment"><code class="language-cpp" data-line-numbers>UARTLCR_H lcrh{registerAddress};
 
 lcrh.write(
 	// enable FIFOs
@@ -1619,6 +1665,7 @@ lcrh.write(
 	// 8 data bits
 	UARTLCR_H::WLEN{0b11}
 );</code></pre>
+					</div>
 				</div>
 			</section>
 
@@ -1626,17 +1673,17 @@ lcrh.write(
 			<section data-auto-animate>
 				<h1>Flexible and safe register accesses</h1>
 				<h2>UARTLCR_H register definition</h2>
-				<pre data-mark-target="register-impl"><code class="language-cpp" data-line-numbers="|1-3|5-12|6|7-9|10-11|14-21">// Use CRTP to give the parent class the type of the register it abstracts
+				<pre data-mark-target="register-impl"><code class="language-cpp" data-line-numbers="|1-2|3|5-12|6|7-9|10-11|14-21">// Use CRTP to give the parent class the type of the register it abstracts
 struct UARTLCR_H : public Register&lt;UARTLCR_H&gt; {
 	UARTLCR_H(volatile uint32_t* regAddr):Register{regAddr} {}
 
-	struct BRK {
+	struct WLEN {
 		using REG = UARTLCR_H;
-		static constexpr uint16_t FIELD_OFFSET = 0;
-		static constexpr uint16_t FIELD_SIZE = 1;
-		static constexpr uint32_t FIELD_MASK = ((1u &lt;&lt; FIELD_SIZE) - 1) &lt;&lt; FIELD_OFFSET;
+		static constexpr uint32_t FIELD_OFFSET = 5;
+		static constexpr uint32_t FIELD_SIZE = 2;
+		static constexpr uint32_t FIELD_MASK = ((1 << FIELD_SIZE) - 1) << FIELD_OFFSET;
 		uint32_t value;
-		BRK(uint32_t value):value{value} {}
+		WLEN(uint32_t value):value{value} {}
 	};
 
 	struct PEN {
@@ -1665,7 +1712,7 @@ struct UARTLCR_H : public Register&lt;UARTLCR_H&gt; {
 			<section data-auto-animate>
 				<h1>Flexible and safe register accesses</h1>
 				<h2>Register abstraction implementation</h2>
-				<pre data-mark-target="register-abstract-impl"><code class="language-cpp" data-line-numbers="|1-2|3-4|6-7|8-11|12-13|12,15-16|17,20-21,23|18-19,22" data-fragment-index="1">template&lt;typename CHILD&gt;
+				<pre data-mark-target="register-abstract-impl"><code class="language-cpp" data-line-numbers="|1-2|3-4|6-7|8-11|12-24|12-13|12,15-16|17,20-21,23|18-19,22" data-fragment-index="1">template&lt;typename CHILD&gt;
 class Register{
 private:
 	volatile uint32_t* value; // Points to the actual memory-mapped register
@@ -1690,7 +1737,10 @@ public:
 		*value = curVal; // Write back value
 	}
 };</code></pre>
-				<p class="fragment" data-fragment-index="8">ℹ️ The fold expression repeats the lambda for each field</p>
+				<div class="fragment" data-fragment-index="9">
+					<p>ℹ️ The lambda is declared and directly invoked for each field</p>
+					<p>ℹ️ The fold expression repeats the lambda for each field</p>
+				</div>
 				<script>
 					window.revealReadyQueue.push(() => {
 						setTimeout(() => highlightMarkedCode('register-abstract-impl', [
@@ -1785,7 +1835,8 @@ auto sum(T first, Args... rest)
 				<ul>
 					<li class="fragment">🔑 Template is a very powerful feature of C++</li>
 					<li class="fragment">🔑 Template parameters values are <code>types</code> or
-						<code>compile time constants</code></li>
+						<code>compile time constants</code>
+					</li>
 					<li class="fragment">🔑 👿 Beware of the implicit requirements 👿</li>
 					<li class="fragment">🔑 Generic programming</li>
 					<li class="fragment">🔑 Allows extensibility</li>
@@ -1800,9 +1851,20 @@ auto sum(T first, Args... rest)
 				<img src="images/conquer.png">
 			</section>
 
-			<section data-auto-animate>
-				<h1 style="text-align: center;">Questions?</h1>
-				<p style="text-align: center;">🙋‍♂️🙋‍♀️</p>
+			<!-- height:1080px makes this section span the full slide canvas (it's normally auto-height
+				 and only re-centered by reveal.js), so the footer's bottom/left can anchor to the
+				 real slide corner instead of the middle of the auto-sized content box -->
+			<section data-auto-animate style="height: 1080px;">
+				<div
+					style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
+					<h1>Questions?</h1>
+					<p>🙋‍♂️🙋‍♀️</p>
+				</div>
+				<p
+					style="position: absolute; bottom: 0.6em; left: 1em; text-align: left; font-size: 1em; opacity: 0.8;">
+					Slides available at: <a
+						href="https://laurentcarlier.com/b2b-template-cppcon-2026/">laurentcarlier.com/b2b-template-cppcon-2026/</a>
+				</p>
 			</section>
 
 			<script src="dist/reveal.js"></script>
