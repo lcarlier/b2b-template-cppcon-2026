@@ -323,17 +323,17 @@ void mySwap(Swappable&amp; a, Swappable&amp; b) {
 }</code></pre>
 					</div>
 					<div style="flex: 1;">
-						<pre class="fragment"><code class="language-cpp" data-line-numbers>int a = 5, b = 10;
+						<pre class><code class="language-cpp" data-line-numbers>int a = 5, b = 10;
 mySwap(a, b);
 assert(a == 10 &amp;&amp; b == 5);</code></pre>
-						<pre class="fragment"><code class="language-cpp" data-line-numbers>float a = 3.14, b = 2.71;
+						<pre class="fragment"><code class="language-cpp" data-line-numbers>float a = 3.14f, b = 2.71f;
 mySwap(a, b);
-assert(a == 2.71 &amp;&amp; b == 3.14);</code></pre>
+assert(a == 2.71f &amp;&amp; b == 3.14f);</code></pre>
 					</div>
 				</div>
 				<div class="fragment">
 					<p>⚠️ Calling the function with 2 different types fails</p>
-					<pre><code class="language-cpp" data-line-numbers>float f = 3.14;
+					<pre><code class="language-cpp" data-line-numbers>float f = 3.14f;
 int i = 42;
 mySwap(i, f); // ❌ Does not compile</code></pre>
 				</div>
@@ -367,6 +367,16 @@ mySwap(i, f); // ❌ Does not compile</code></pre>
 			<section data-auto-animate>
 				<h1>Function template</h1>
 				<h2>How are function templates processed?</h2>
+				<pre data-id="mySwap"><code class="language-cpp" data-line-numbers>template&lt;typename Swappable&gt;
+void mySwap(Swappable&amp; a, Swappable&amp; b) {
+	Swappable tmp = std::move(a);
+	a = std::move(b);
+	b = std::move(tmp);
+}
+
+int a = 5, b = 10;
+mySwap(a, b);
+</code></pre>
 				<div class="fragment">
 					<p><b><u>Two-phase name lookup</u></b></p>
 					<p>First, the compiler checks for syntax</p>
@@ -488,7 +498,7 @@ void fun() {
 				<div style="display: flex; gap: 40px; justify-content: space-between;">
 					<div style="flex: 1;">
 						<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
-void func(T a);
+void funcValue(T a);
 
 template&lt;typename T&gt;
 void funcRefParam(T&amp; a);
@@ -498,8 +508,8 @@ void funcRefParam(T&amp; a);
 						<pre data-mark-target="cv-qual-deduct"><code class="language-cpp" data-line-numbers>int x = 5;
 const int cx = 5;
 
-func(x);  // T is int
-func(cx); // T is int (cv-qualifier is dropped)
+funcValue(x);  // T is int
+funcValue(cx); // T is int (cv-qualifier is dropped)
 funcRefParam(x);  // T is int
 funcRefParam(cx); // T is const int (cv-qualifier is preserved)</code></pre>
 					</div>
@@ -532,14 +542,14 @@ funcRefParam(cx); // T is const int (cv-qualifier is preserved)</code></pre>
 				<div style="display: flex; gap: 40px; justify-content: space-between;">
 					<div style="flex: 1;">
 						<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
-void functConstRefParam(const T&amp; a);</code></pre>
+void funcConstRefParam(const T&amp; a);</code></pre>
 					</div>
 					<div style="flex: 1;">
 						<pre><code class="language-cpp" data-line-numbers>int x = 5;
 const int cx = 5;
 
-functConstRefParam(x);  // T is int
-functConstRefParam(cx); // T is int (cv-qualifier is dropped)</code></pre>
+funcConstRefParam(x);  // T is int
+funcConstRefParam(cx); // T is int (cv-qualifier is dropped)</code></pre>
 					</div>
 				</div>
 				<p class="fragment">⚠️ <code>a</code> is a const reference even though <code>T</code> is deduced without
@@ -554,10 +564,10 @@ functConstRefParam(cx); // T is int (cv-qualifier is dropped)</code></pre>
 void funcValue(T arg);
 
 template&lt;typename T&gt;
-void funcRef(T&amp; arg);</code></pre>
+void funcRefParam(T&amp; arg);</code></pre>
 				<pre><code class="language-cpp" data-line-numbers>int arr[5];
 funcValue(arr);  // T == int* (array decays to pointer)
-funcRef(arr);    // T == int[5] (reference keeps the array type)</code></pre>
+funcRefParam(arr);    // T == int[5] (reference keeps the array type)</code></pre>
 			</section>
 
 			<!-- Slide: More on reference parameters -->
@@ -565,8 +575,9 @@ funcRef(arr);    // T == int[5] (reference keeps the array type)</code></pre>
 				<h1>Template argument deduction</h1>
 				<h2>More on reference parameters</h2>
 				<p>⚠️ A reference parameter can deduce a pointer type ⚠️</p>
-				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers="|1-4|6-7|9-11">template&lt;typename T&gt;
-void increment(T&amp; value) {
+				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers="|1-5|9-8|10-12">template&lt;typename T&gt;
+void dangerousFunction(T&amp; value) {
+	// ... some logic
 	++value;
 }
 
@@ -574,12 +585,14 @@ int retries = 0;
 int* retriesPtr = &amp;retries;
 // ...
 // 😱 Forgot '*' 😱.
-increment(retriesPtr); // T is deduced asint* i.e. type of value is int*&amp;
+dangerousFunction(retriesPtr); // T is deduced as int* i.e. type of value is int*&amp;
 printf("%d\n", *retriesPtr); // 💥 disaster 💥</code></pre>
 				<script>
 					window.revealReadyQueue.push(() => {
-						markCode('ptr-deduct', 'int*', 2);
-						markCode('ptr-deduct', 'int*&');
+						setTimeout(() => highlightMarkedCode('ptr-deduct', [
+							['int*', 2],
+							['int*&', 1]
+						]), 100);
 					});
 				</script>
 			</section>
@@ -589,8 +602,8 @@ printf("%d\n", *retriesPtr); // 💥 disaster 💥</code></pre>
 				<h1>Template argument deduction</h1>
 				<h2>Reference parameter take away</h2>
 				<p class="fragment">⚠️Think twice when using non-const reference parameters</p>
-				<p class="fragment">💡Make use of <mark>&lt;type_traits&gt;</mark> e.g. <code>std::is_pointer</code>,
-					<code>std::is_const</code>, ... and <code>static_assert</code> to validate the template argument
+				<p class="fragment">💡Make use of <code>static_assert</code> and <mark>&lt;type_traits&gt;</mark> e.g. <code>std::is_pointer</code>,
+					<code>std::is_const</code>, to validate the template argument
 					type at compile time
 				</p>
 				<p class="fragment">💡From C++20, use concepts</p>
@@ -675,7 +688,7 @@ T myMax(T a, T b) {
 
 			<section data-auto-animate>
 				<h1>Function Template Specialization</h1>
-				<h2>Why not an explicit specialization? 🤔</h2>
+				<h2>Why not using an explicit specialization? 🤔</h2>
 				<div class="fragment">
 					<p>Specialization provides a custom implementation for a specific type</p>
 					<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
@@ -744,7 +757,7 @@ void print(Iterable&amp; c) {
 						<div style="flex: 1;">
 							<div class="fragment">
 								<p>Works with</p>
-								<p>Any standard containers (vector, list, deque, set, map, ...) </p>
+								<p>Any standard containers (vector, list, set, map, ...) </p>
 								<pre><code class="language-cpp" data-line-numbers>std::vector&lt;int&gt; v = {1, 2, 3};
 print(v);</code></pre>
 							</div>
@@ -853,15 +866,15 @@ int main()
 				<p>Variadic templates are templates that take a variable number of template parameters.</p>
 				<p>Ellipsis (<code>...</code>) is used to tell which parameter is variadic and where it expands</p>
 				<div class="fragment">
-					<pre data-mark-target="sum_all"><code class="language-cpp" data-line-numbers>template&lt;typename... Ts&gt;
+					<pre data-mark-target="sum_all"><code class="language-cpp" data-line-numbers>template&lt;typename T, typename... Ts&gt;
 int sum_all(Ts... args)
 {
-    std::array&lt;int, sizeof...(Ts)&gt; arr = { args... }; // pack expansion fills the array
+    std::array&lt;T, sizeof...(Ts)&gt; arr = { args... }; // pack expansion fills the array
     return std::accumulate(arr.begin(), arr.end(), 0);
 }</code></pre>
 				</div>
 				<div class="fragment">
-					<pre><code class="language-cpp" data-line-numbers>int total = sum_all(1, 2, 3, 4); // total == 10</code></pre>
+					<pre><code class="language-cpp" data-line-numbers>auto total = sum_all&lt;int&gt;(1, 2, 3, 4); // total == 10</code></pre>
 				</div>
 				<script>
 					window.revealReadyQueue.push(() => {
@@ -869,6 +882,7 @@ int sum_all(Ts... args)
 							['...', 1],
 							['...', 2],
 							['...', 4],
+							['sizeof...(Ts)', 1],
 						]), 100);
 					});
 				</script>
@@ -880,7 +894,7 @@ int sum_all(Ts... args)
 				<h1>Variadic templates</h1>
 				<h2>Variadic sum_all under the hood</h2>
 				<p>sum_all generated code</p>
-				<img src="images/sum_all.png" alt="Variadic sum_all" style="height: 46vh;">
+				<img src="images/sum_all.png" alt="Variadic sum_all" style="height: 70vh;">
 				<p><a href="https://cppinsights.io/s/5d262841">https://cppinsights.io/s/5d262841</a></p>
 			</section>
 
@@ -927,7 +941,7 @@ void print(T first, Args... rest) {
 				<h2>Variadic print under the hood</h2>
 				<p>3 print functions having the right number and types of parameters are generated</p>
 				<img src="images/variadicPrint.png" alt="Variadic print"
-					style="width: 72%; max-width: 72%; max-height: 46vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
+					style="width: 72%; max-width: 72%; max-height: 70vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
 				<p><a href="https://cppinsights.io/s/ed6d5cc7">https://cppinsights.io/s/ed6d5cc7</a></p>
 			</section>
 
@@ -950,7 +964,7 @@ void print(Args... args) {
 				<h1>Variadic templates</h1>
 				<h2 data-id="cpp17fold">C++ 17's fold expressions (under the hood)</h2>
 				<img src="images/variadicFold.png" alt="Variadic print"
-					style="width: 72%; max-width: 72%; max-height: 48vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
+					style="width: 72%; max-width: 72%; max-height: 70vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
 				<p><a href="https://cppinsights.io/s/16760da2">https://cppinsights.io/s/16760da2</a></p>
 				<p><a
 						href="https://en.cppreference.com/cpp/language/fold">https://en.cppreference.com/cpp/language/fold</a>
@@ -1054,6 +1068,17 @@ void relay(const T&amp;&amp; arg);</code></pre>
 				</ul>
 			</section>
 
+			<!-- Slide: Perfect forwarding with auto&& -->
+			<section data-auto-animate>
+				<h1>Perfect forwarding</h1>
+				<p><code>auto&amp;&amp;</code> behaves like a forwarding reference</p>
+				<pre><code class="language-cpp" data-line-numbers>void relay(auto&amp;&amp; arg) {
+	consume(std::forward&lt;decltype(arg)&gt;(arg));
+};</code></pre>
+				<p class="fragment">No named <code>T</code> to forward with &rarr; use <code>decltype(arg)</code>
+					instead</p>
+			</section>
+
 			<!-- Slide: std::forward catch last gotchas -->
 			<section data-auto-animate>
 				<h1>Perfect forwarding</h1>
@@ -1065,17 +1090,6 @@ void relay(const T&amp;&amp; arg);</code></pre>
 					<li class="fragment"><code>std::move</code> instead of <code>std::forward</code> &rarr; moves
 						lvalues unconditionally</li>
 				</ul>
-			</section>
-
-			<!-- Slide: Perfect forwarding with auto&& -->
-			<section data-auto-animate>
-				<h1>Perfect forwarding</h1>
-				<p><code>auto&amp;&amp;</code> behaves like a forwarding reference</p>
-				<pre><code class="language-cpp" data-line-numbers>void relay(auto&amp;&amp; arg) {
-	consume(std::forward&lt;decltype(arg)&gt;(arg));
-};</code></pre>
-				<p class="fragment">No named <code>T</code> to forward with &rarr; use <code>decltype(arg)</code>
-					instead</p>
 			</section>
 
 			<!-- Slide: Variable templates -->
@@ -1184,7 +1198,7 @@ struct Stack {
 	// ... other member functions ...
 
 	template &lt;typename U&gt;
-	void relay(U&amp;&amp; arg) {
+	void emplace(U&amp;&amp; arg) {
 		consume(std::forward&lt;U&gt;(arg));
 	}
 };</code></pre>
@@ -1224,7 +1238,7 @@ struct Stack {
 				<h1>Class/struct template</h1>
 				<h2>Definition outside of the class</h2>
 				<p>When the member function is defined outside the class, it needs its own template parameter list.</p>
-				<pre><code class="language-cpp" data-line-numbers="1-8|10-11|13-17|1,13|6,14">template &lt;typename T&gt;
+				<pre><code class="language-cpp" data-line-numbers="1-8|10-11|13-17|1,13|6,14|15-17">template &lt;typename T&gt;
 class Stack {
 public:
 	const T&amp; top() const;
@@ -1286,8 +1300,8 @@ bool Stack&lt;T&gt;::empty() const { return data.empty(); }
 template&lt;typename T&gt;
 std::size_t Stack&lt;T&gt;::size() const { return data.size(); }
 
-// Tell the compiler to instantiate all the member functions of
-// Stack&lt;int&gt; in this translation unit
+// Tell the compiler to instantiate all the non templated
+// member functions of Stack&lt;int&gt; in this translation unit
 template class Stack&lt;int&gt;;
 
 // Tell the compiler to instantiate
@@ -1369,7 +1383,7 @@ Stack&lt;int*&gt; pointerStack;  // Stack&lt;T*&gt; specialization</code></pre>
 			<section data-auto-animate>
 				<h1>Generic serializer and policy-based design</h1>
 				<ul>
-					<li class="fragment">Design a dump_object function to serialize an object into different formats
+					<li class="fragment">Design a dump_object function to serialize an object into different formats (e.g., JSON, YAML)</li>
 					</li>
 					<li class="fragment">It should use policy classes (sinks) to determine the output format</li>
 					<li class="fragment">No inheritance required</li>
@@ -1391,24 +1405,28 @@ void dump_object(const Object&amp; d)
 				<div class="r-stack">
 					<div class="fragment current-visible">
 						<pre><code class="language-cpp" data-line-numbers>struct JsonSink {
-	static void begin_object(std::string_view n) { std::cout &lt;&lt; "\"" &lt;&lt; n &lt;&lt; "\": {\n"; }
+	static void begin_object(std::string_view n) {
+		std::printf("\"%s\": {\n", n.data());
+	}
 	static void field(std::string_view k, int v) {
-		std::cout &lt;&lt; "  \"" &lt;&lt; k &lt;&lt; "\": " &lt;&lt; v &lt;&lt; ",\n";
+		std::printf("  \"%s\": %d,\n", k.data(), v);
 	}
 	static void field(std::string_view k, std::string_view v) {
-		std::cout &lt;&lt; "  \"" &lt;&lt; k &lt;&lt; "\": \"" &lt;&lt; v &lt;&lt; "\",\n";
+		std::printf("  \"%s\": \"%s\",\n", k.data(), v.data());
 	}
-	static void end_object() { std::cout &lt;&lt; "}\n"; }
+	static void end_object() { std::printf("}\n"); }
 };</code></pre>
 					</div>
 					<div class="fragment current-visible">
 						<pre><code class="language-cpp" data-line-numbers>struct YamlSink {
-	static void begin_object(std::string_view n) { std::cout &lt;&lt; n &lt;&lt; ":\n"; }
+	static void begin_object(std::string_view n) {
+		std::printf("%s:\n", n.data());
+	}
 	static void field(std::string_view k, int v) {
-		std::cout &lt;&lt; "  " &lt;&lt; k &lt;&lt; ": " &lt;&lt; v &lt;&lt; "\n";
+		std::printf("  %s: %d\n", k.data(), v);
 	}
 	static void field(std::string_view k, std::string_view v) {
-		std::cout &lt;&lt; "  " &lt;&lt; k &lt;&lt; ": \"" &lt;&lt; v &lt;&lt; "\"\n";
+		std::printf("  %s: %s\n", k.data(), v.data());
 	}
 	static void end_object() {}
 };</code></pre>
@@ -1419,9 +1437,9 @@ void dump_object(const Object&amp; d)
 							<p>Main function</p>
 							<pre><code class="language-cpp" data-line-numbers>int main() {
 	Object apple{1, "apple"};
-	std::cout &lt;&lt; "---------JSON-----------\n";
+	std::printf("---------JSON-----------\n");
 	dump_object&lt;JsonSink&gt;(apple);
-	std::cout &lt;&lt; "---------YAML-----------\n";
+	std::printf("---------YAML-----------\n");
 	dump_object&lt;YamlSink&gt;(apple);
 }</code></pre>
 							<p><a href="https://godbolt.org/z/crqP67bTW">https://godbolt.org/z/crqP67bTW</a></p>
@@ -1448,15 +1466,11 @@ object:
 				<h2>Register bank manager</h2>
 				<ul>
 					<li class="fragment">2 set of registers bank exists: Active and Standby</li>
-					<li class="fragment">Driver writes the standby bank and calls <code>commit()</code> to swap the bank
-					</li>
+					<li class="fragment">Driver writes the standby bank using <code>write(...)</code>
+					<ul><li>The parameters to writes must not be fixed</li></ul></li>
+					<li class="fragment">Driver calls <code>commit()</code> to swap the active and standby banks</li>
 					<li class="fragment">Bank-swap policy is decoupled from register access</li>
 					<li class="fragment">The client code is unaware of the active bank</li>
-					<li class="fragment">Different hardware layouts are supported
-						<ul>
-							<li>Registers access are flexible to the HAL implementation</li>
-						</ul>
-					</li>
 				</ul>
 			</section>
 
@@ -1493,7 +1507,7 @@ private:
 									uint16_t torque_limit = 0; };
 	Config m_banks[2]{};
 public:
-	bool write(	uint8_t bank_id, std::string_view field, uint16_t value)
+	bool write(uint8_t bank_id, std::string_view field, uint16_t value)
 	{
 		if (field == "speed_rpm") {
 			m_banks[bank_id].speed_rpm = value;
@@ -1681,7 +1695,7 @@ struct UARTLCR_H : public Register&lt;UARTLCR_H&gt; {
 		using REG = UARTLCR_H;
 		static constexpr uint32_t FIELD_OFFSET = 5;
 		static constexpr uint32_t FIELD_SIZE = 2;
-		static constexpr uint32_t FIELD_MASK = ((1 << FIELD_SIZE) - 1) << FIELD_OFFSET;
+		static constexpr uint32_t FIELD_MASK = ((1 &lt;&lt; FIELD_SIZE) - 1) &lt;&lt; FIELD_OFFSET;
 		uint32_t value;
 		WLEN(uint32_t value):value{value} {}
 	};
@@ -1712,7 +1726,7 @@ struct UARTLCR_H : public Register&lt;UARTLCR_H&gt; {
 			<section data-auto-animate>
 				<h1>Flexible and safe register accesses</h1>
 				<h2>Register abstraction implementation</h2>
-				<pre data-mark-target="register-abstract-impl"><code class="language-cpp" data-line-numbers="|1-2|3-4|6-7|8-11|12-24|12-13|12,15-16|17,20-21,23|18-19,22" data-fragment-index="1">template&lt;typename CHILD&gt;
+				<pre data-mark-target="register-abstract-impl"><code class="language-cpp" data-line-numbers="|1-2|3-4|6-11|12-24|12-13|12,15-16|17,23|18-22" data-fragment-index="1">template&lt;typename CHILD&gt;
 class Register{
 private:
 	volatile uint32_t* value; // Points to the actual memory-mapped register
