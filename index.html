@@ -344,8 +344,8 @@ third example (37-42) — those are the places to trim if you are running late.
 				<aside class="notes">
 					<p>[0:50 — 1:10]</p>
 					<p>Before we start, let me tell you what I want you to get out of this talk.</p>
-					<p>The first goal is that, by the end of this presentation, you should be able to go and write your own templates.
-					To convince you it's worth it, I'm going to show you that templates give you type safety, that they are performant, and that they open the door to generic programming.</p>
+					<p>My first goal is that you take home something you can use: by the end of this presentation, you should be able to go and write your own templates.</p>
+					<p>And to convince you that it's worth doing, I'm going to show you three concrete reasons along the way: templates give you type safety, they are performant, and they open the door to generic programming.</p>
 				</aside>
 			</section>
 
@@ -416,22 +416,24 @@ third example (37-42) — those are the places to trim if you are running late.
 				</p>
 				<pre><code class="language-cpp">template&lt; [parameter-list] &gt;
 recipe</code></pre>
-				<p><code>parameter-list</code> can be:</p>
-				<ul>
-					<li>type parameter e.g. <code>std::string</code></li>
-					<li>non type parameter (aka NTTP) e.g. enum value, constexpr value</li>
-					<li>parameter pack using ellipsis <code
-							style="background-color: var(--code-background);">...</code></li>
-					<li>template parameter e.g. <code>template&lt;typename&gt; class</code></li>
-				</ul>
+				<div class="fragment">
+					<p><code>parameter-list</code> can be:</p>
+					<ul>
+						<li>type parameter e.g. <code>std::string</code></li>
+						<li>non type parameter (aka NTTP) e.g. enum value, constexpr value</li>
+						<li>parameter pack using ellipsis <code
+								style="background-color: var(--code-background);">...</code></li>
+						<li>template parameter e.g. <code>template&lt;typename&gt; class</code></li>
+					</ul>
+				</div>
 				<div class="fragment">
 				<p><code>recipe</code> can be:</p>
 					<ul>
-						<li>function declaration</li>
-						<li>a class/struct declaration</li>
-						<li>a type alias declaration</li>
-						<li>variable declaration</li>
-						<li>concept declaration</li>
+						<li>function definition</li>
+						<li>a class/struct definition</li>
+						<li>a type alias definition</li>
+						<li>variable definition</li>
+						<li>concept definition</li>
 					</ul>
 				</div>
 				<aside class="notes">
@@ -588,7 +590,7 @@ void mySwap(Swappable&amp; a, Swappable&amp; b) {
 int a = 5, b = 10;
 mySwap(a, b);
 </code></pre>
-				<p class="fragment">First, the compiler checks for syntax</p>
+				<p class="fragment">First, the compiler checks for syntax and resolve non-dependent names identifier.</p>
 				<p class="fragment">Second the template argument is substituted in for the template parameter</p>
 				<p class="fragment">⚠️ The code can compile until a function template is called</p>
 				<aside class="notes">
@@ -721,7 +723,7 @@ void fun() {
 				<h1>Template argument deduction</h1>
 				<h2>Explicit template arguments</h2>
 				<p>Provide the template argument <b><u>explicitly</u></b> to override deduction</p>
-				<pre data-id="argDeduct" data-mark-target="myMax-call"><code class="language-cpp">template&lt;typename T&gt;
+				<pre data-id="argDeduct" data-mark-target="myMax-call"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
 T myMax(T a, T b) {
 	return a &gt; b ? a : b;
 }
@@ -848,7 +850,7 @@ funcRefParam(arr); // T is deduced as int[5]
 				<div class="fragment">
 					<p>💡 A reference parameter can even deduce the size as an NTTP 💡</p>
 					<pre><code class="language-cpp" data-line-numbers>template&lt;typename T, std::size_t N&gt;
-constexpr std::size_t arraySize(T (&amp;)[N]) { return N; }
+constexpr std::size_t arraySize(T(&amp;)[N]) { return N; }
 
 int arr[5];
 static_assert(arraySize(arr) == 5);</code></pre>
@@ -880,19 +882,19 @@ static_assert(arraySize(arr) == 5);</code></pre>
 				<h2>⚠️ Why <code>T&amp;</code> is dangerous with pointers ⚠️</h2>
 				<p>A reference parameter will happily deduce <code>T</code> as a <b>pointer</b> type.</p>
 				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers="|1-5|7-13">template&lt;typename T&gt;
-void dangerous(T&amp; value) {
+void dangerous(T&amp; retry) {
 	// ... some logic
-	++value;
+	++retry;
 }
 
 int retries = 0;
 int* retriesPtr = &amp;retries;
 
 // 😱 Forgot the '*' 😱
-dangerous(retriesPtr); // T is int*, so value is int*&amp;
+dangerous(retriesPtr); // T is int*, so retry is int*&amp;
 // retriesPtr is now pointing to an invalid memory address
 printf("%d\n", *retriesPtr);   // 💥 disaster 💥</code></pre>
-				<p class="fragment">The <b>pointer</b> is incremented, not the value </p>
+				<p class="fragment">The <b>pointer</b> is incremented, not retries </p>
 				<ul>
 					<li class="fragment">⚠️ Think twice before using a non-const reference parameter</li>
 					<li class="fragment">💡 Validate the deduced type with <code>static_assert</code> and
@@ -1085,7 +1087,7 @@ print(even);</code></pre>
 							<div style="flex: 1;">
 								<p>C-style arrays</p>
 								<pre><code class="language-cpp" data-line-numbers>int arr[] = {1, 2, 3};
-						print(arr);</code></pre>
+print(arr);</code></pre>
 							</div>
 						</div>
 						</div>
@@ -1153,7 +1155,7 @@ int main()
 			<section data-auto-animate>
 				<h1>Variadic templates</h1>
 				<h2>A variable number of template parameters</h2>
-				<p class="fragment">The ellipsis (<code>...</code>) says which parameter is a <b>pack</b>, and where it expands.</p>
+				<p class="fragment">The ellipsis <code>...</code> says which parameter is a <b>pack</b>, and where it expands.</p>
 				<div class="fragment">
 					<pre data-mark-target="sum_all"><code class="language-cpp" data-line-numbers>template&lt;typename T, typename ...Ts&gt;
 T sum_all(Ts... args) {
@@ -1274,11 +1276,13 @@ auto total = sum_all&lt;int&gt;(1, 2);</code></pre>
 				<h2 data-id="cpp17fold">C++17's fold expressions</h2>
 				<p>Syntax</p>
 				<pre data-mark-target="foldSyntax"><code>(pattern op ...);</code></pre>
+				<div class="fragment">
 				<p>A fold repeats one expression for each element of the pack.</p>
 				<pre data-mark-target="variadicFold"><code class="language-cpp" data-line-numbers>template&lt;typename ...Args&gt;
 void print(Args... args) {
 	((std::cout &lt;&lt; args &lt;&lt; " ") , ...);
 }</code></pre>
+				</div>
 				<div class="fragment">
 					<p>Calling <code class="language-cpp">print(1, 2.5, "hello")</code> prints <code>1 2.5 hello</code>
 					</p>
@@ -1287,11 +1291,11 @@ void print(Args... args) {
 				<script>
 					window.revealReadyQueue.push(() => {
 						setTimeout(() => highlightMarkedCode('foldSyntax', [
-							['pattern', 1],
+							['pattern', 1, 'mediumpurple'],
 							['op', 1, 'lightgreen']
 						]), 200);
 						setTimeout(() => highlightMarkedCode('variadicFold', [
-							['(std::cout << args << " ")', 1],
+							['(std::cout << args << " ")', 1, 'mediumpurple'],
 							[',', 1, 'lightgreen']
 						]), 100);
 					});
@@ -1361,9 +1365,11 @@ print(1, 2.5, "hello");</code></pre>
 								['int __args0,', 1, 'lightblue'],
 								['double __args1,', 1, 'lightblue'],
 								['const char * __args2', 1, 'lightblue'],
-								['(std::cout << __args0 << " "),', 1, 'mediumpurple'],
-								['(std::cout << __args1 << " "),', 1, 'mediumpurple'],
-								['(std::cout << __args2 << " ")', 1, 'mediumpurple']
+								['(std::cout << __args0 << " ")', 1, 'mediumpurple'],
+								['(std::cout << __args1 << " ")', 1, 'mediumpurple'],
+								['(std::cout << __args2 << " ")', 1, 'mediumpurple'],
+								[',', 5, 'lightgreen'],
+								[',', 6, 'lightgreen']
 							]);
 						}, 100);
 					});
@@ -1656,7 +1662,7 @@ d.greet(); // prints "hello", no virtual call</code></pre>
 				</script>
 				<aside class="notes">
 					<p>[1:50 — 32:35]</p>
-					<p>The technique of today is the Curiously Recurring Template Pattern (CRTP).</p>
+					<p>The last technique of today is the Curiously Recurring Template Pattern (CRTP).</p>
 					<p>This allows a parent class to know the exact static type of the derived class.</p>
 					<p>Let's look at an example.</p>
 					<p>(lines 1-2) `Base` looks like a normal template class, but it takes a type parameter I have named `CHILD`.</p>
@@ -1697,8 +1703,7 @@ d.greet(); // prints "hello", no virtual call</code></pre>
 				</ul>
 				<aside class="notes">
 					<p>[0:50 — 33:45]</p>
-					<p>Example one: a generic serializer using policy-based design. Go through these fast — it is just the
-					requirements.</p>
+					<p>Example one: a generic serializer using policy-based design.</p>
 					<p>We want a `dump_object` function that serializes an object into different formats — JSON, YAML,
 					maybe a binary protocol later.</p>
 					<p>The output format is chosen by a *policy class* — a sink.</p>
@@ -1797,6 +1802,7 @@ object:
 				<h1>Generic abstraction layer</h1>
 				<h2>Register bank manager</h2>
 				<ul>
+					<li class="fragment">Register bank is used to program the hardware</li>
 					<li class="fragment">2 set of registers bank exists: Active and Standby</li>
 					<li class="fragment">Driver writes the standby bank using <code>write(...)</code>
 						<ul>
@@ -1908,15 +1914,15 @@ public:
 				<h1>Generic abstraction layer</h1>
 				<h2>Register bank manager</h2>
 				<p>ActiveStandbyBank implementation</p>
-				<pre data-mark-target="activeStandbyBank"><code class="language-cpp" data-line-numbers="|1-2|4-6|8-9,11-12|14-18|14-15|16-18|20-26">template &lt;typename REGISTER_LOGIC&gt;
+				<pre data-mark-target="activeStandbyBank"><code class="language-cpp" data-line-numbers="|1-2|4-6|8-9,11-12|14-18|14-15|16-18|20-26">template &lt;typename REGISTER_ACCESS_LOGIC&gt;
 class ActiveStandbyBank
 {
 private:
-	REGISTER_LOGIC m_register_logic{};
+	REGISTER_ACCESS_LOGIC m_register_access_logic{};
 	uint8_t	m_active_id = 0;
 public:
-	explicit ActiveStandbyBank(REGISTER_LOGIC register_logic)
-		: m_register_logic(std::move(register_logic)){}
+	explicit ActiveStandbyBank(REGISTER_ACCESS_LOGIC register_access_logic)
+		: m_register_access_logic(std::move(register_access_logic)){}
 
 	uint8_t active_id() const  { return m_active_id; }
 	uint8_t standby_id() const { return (m_active_id + 1) % 2; }
@@ -1924,7 +1930,7 @@ public:
 	template &lt;typename ...Args&gt;
 	bool write(Args&amp;&amp;... args)
 	{
-		return m_register_logic.write(standby_id(), std::forward&lt;Args&gt;(args)...);
+		return m_register_access_logic.write(standby_id(), std::forward&lt;Args&gt;(args)...);
 	}
 
 	template &lt;typename ...Args&gt;
@@ -1932,7 +1938,7 @@ public:
 	{
 		const auto current_standby_id = standby_id();
 		m_active_id = current_standby_id;
-		m_register_logic.commit(current_standby_id, std::forward&lt;Args&gt;(args)...);
+		m_register_access_logic.commit(current_standby_id, std::forward&lt;Args&gt;(args)...);
 	}
 };</code></pre>
 				<p><a href="https://godbolt.org/z/zd5EG59P4">https://godbolt.org/z/zd5EG59P4</a></p>
@@ -1948,13 +1954,13 @@ public:
 					<p>[1:15 — 39:35]</p>
 					<p>Now let's have a look at the ActiveStandbyBank implementation which is the star of the show.</p>
 					<p>It is 27 lines and it works with ANY register logic that satisfies the expected interface.</p>
-					<p>(lines 1-2) A class template over `REGISTER_LOGIC`.</p>
+					<p>(lines 1-2) A class template over `REGISTER_ACCESS_LOGIC`.</p>
 					<p>(lines 4-6) It owns the register logic by value — no pointer, no indirection, and the compiler can see right
 					through it — plus one byte of state: which bank is active.</p>
 					<p>(lines 8-12) Constructor, and the trivial bank arithmetic. This is the policy, written once.</p>
 					<p>(lines 14-18) `write`. This is the interesting part.
 					We got our forwarding reference pack.
-					Then on line 17, we call `m_register_logic.write` with the standby id and perfectly forward the arguments.</p>
+					Then on line 17, we call `m_register_access_logic.write` with the standby id and perfectly forward the arguments.</p>
 					<p>(lines 20-26) `commit` is the same shape.
 					It grabs the arguments using a forwarding reference pack.
 					It is to be noted that in our case the commit function took no argument so the parameter pack was empty. But that is ok.</p>
