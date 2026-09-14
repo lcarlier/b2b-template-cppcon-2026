@@ -355,7 +355,7 @@ third example (37-42) — those are the places to trim if you are running late.
 				<!-- For AI: this image is my cat looking at the screen. I want to say that
 				     since I gave the talk to my cat and it understood it then templates
 					 can be understood by anyone. -->
-				<img src="images/UnaLearning.png" style="height: 85vh;">
+				<img class="fragment" src="images/UnaLearning.png" style="height: 85vh;">
 				<aside class="notes">
 					<p>[0:30 — 1:40]</p>
 					<p>The second goal is to show you that templates don't have to be complicated. With just a handful of features, you can already write efficient and performant code.
@@ -1579,8 +1579,8 @@ struct Stack {
 							['T&&', 1],
 						]), 100);
 						setTimeout(() => highlightMarkedCode('goodForward', [
-							['<typename U>', 1],
-							['U&&', 1],
+							['<typename ...U>', 1],
+							['U&&...', 1],
 						]), 100);
 					});</script>
 				<aside class="notes">
@@ -2381,7 +2381,7 @@ auto sum(T first, Args... rest)
 
 			<section data-auto-animate>
 				<h1 style="text-align: center;">The end!</h1>
-				<img src="images/conquer.png" alt="Conquering templates" style="max-height: 55vh;">
+				<img src="images/conquer.png" alt="Conquering templates" style="max-height: 80vh;">
 				<aside class="notes">
 					<p>[0:20 — 48:15]</p>
 					<p>For the record, I gave a small lie at the start of the presentation. While giving the talk to my cat she decided to take a nap on me...</p>
