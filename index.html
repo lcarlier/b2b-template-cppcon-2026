@@ -6,17 +6,24 @@ All 43 slides now have <aside class="notes"> speaker notes. The remaining lint o
 
 Timing plan (visible at the top of each note as [duration — cumulative]):
 
-Intro & goals — 0:00–4:00
-Syntax, function templates, instantiation, two-phase lookup — 4:00–10:30
-Implicit requirements (the pivot concept) — 10:30–12:30
-Macros vs. templates — 12:30–16:30
-Argument deduction & its surprises, overload vs. specialization — 16:30–23:30
-Generic programming & static polymorphism — 23:30–26:30
-Variadics, folds, perfect forwarding — 26:30–34:00
-Class templates, forwarding trap, CRTP — 34:00–38:30
-Three real-world examples — 39:00–51:30
-Conclusion — 51:30–53:00
-Q&A — 53:00–60:00
+Model: 135 words/minute of narration + 3s per fragment reveal + 6s per slide change,
+rounded to the nearest 5s. Total narration is 5,368 words over 45 slides.
+
+  Intro / goals / philosophy / agenda  slides  0-4    3:30   (ends  3:30)
+  Syntax + function templates          slides  5-10   6:35   (ends 10:05)
+  Template argument deduction          slides 11-18   7:00   (ends 17:05)
+  Putting templates to work            slides 19-20   2:00   (ends 19:05)
+  Variadic templates                   slides 21-24   4:20   (ends 23:25)
+  Perfect forwarding + class templates slides 25-30   9:10   (ends 32:35)
+  The three worked examples            slides 31-42  13:35   (ends 46:10)
+  Conclusion + the end                 slides 43-44   2:05   (ends 48:15)
+  Q&A                                  slide  45      7:00   (53:00 - 60:00)
+
+Talk ends around 48:15, leaving ~5 minutes of buffer before the 53:00 Q&A slot.
+Checkpoints to watch while presenting: 10:05 (end of function templates),
+23:25 (end of variadic), 32:35 (all building blocks done, examples start).
+Highest overrun risk: perfect forwarding / class templates (25-30) and the
+third example (37-42) — those are the places to trim if you are running late.
 -->
 
 <head>
@@ -111,6 +118,12 @@ Q&A — 53:00–60:00
 			width: 111.112%;
 		}
 
+		/* Section's auto height only fits the bullet list, so a perspective ancestor would make the
+		   fixed-position overlay below center on that small box instead of the full slide. */
+		.reveal .slides section.slide-ground-rules {
+			perspective: none;
+		}
+
 		.reveal .slides section.slide-register-bank-code.present {
 			display: grid !important;
 			grid-template-rows: auto auto auto minmax(0, 1fr) auto minmax(0, 1fr);
@@ -130,11 +143,116 @@ Q&A — 53:00–60:00
 		.reveal .slides section.slide-register-bank-code.present>pre code {
 			max-height: none;
 		}
+
+		/* Default .reveal pre code max-height (400px) is shorter than the highlighted
+		   13-29 range (the whole write() body) in this block, so reveal.js's fragment
+		   auto-scroll-into-view still can't show it in full. Raise the ceiling only for
+		   this block; reveal.js keeps centering the highlighted lines automatically. */
+		.reveal pre[data-mark-target="register-abstract-impl"] code {
+			max-height: 620px;
+		}
+
+		/* 18-line example does not fit in the default 400px code height. */
+		.reveal .slides section.slide-lazy-instantiation pre code {
+			max-height: 640px;
+		}
+
+		.r-stack.top-aligned > * {
+			margin: 0 auto;
+		}
+
+		/* Mimics the cppinsights.io two-pane "Source"/"Insight" viewer */
+		.cppi-window {
+			border: 1px solid #cfcfcf;
+			border-radius: 8px;
+			overflow: hidden;
+			box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+			background: #fff;
+		}
+
+		.cppi-titlebar {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 0.35em 0.8em;
+			background: linear-gradient(#f7f7f7, #e9e9e9);
+			border-bottom: 1px solid #cfcfcf;
+		}
+
+		.cppi-titlebar .cppi-dot {
+			width: 11px;
+			height: 11px;
+			border-radius: 50%;
+			flex-shrink: 0;
+		}
+
+		.cppi-titlebar .cppi-dot.red {
+			background: #ff5f56;
+		}
+
+		.cppi-titlebar .cppi-dot.yellow {
+			background: #ffbd2e;
+		}
+
+		.cppi-titlebar .cppi-dot.green {
+			background: #27c93f;
+		}
+
+		.cppi-titlebar .cppi-url {
+			font-family: monospace;
+			font-size: 0.42em;
+			color: #555;
+			background: #fff;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+			padding: 0.2em 1.2em;
+			margin: 0 auto;
+		}
+
+		.cppi-panes {
+			display: flex;
+		}
+
+		.cppi-pane {
+			flex: 1;
+			min-width: 0;
+		}
+
+		.cppi-pane+.cppi-pane {
+			border-left: 1px solid #ddd;
+		}
+
+		.cppi-pane-label {
+			font-family: monospace;
+			font-size: 0.5em;
+			color: #767676;
+			margin: 0;
+			padding: 0.35em 0.9em;
+			background: #fafafa;
+			border-bottom: 1px solid #eaeaea;
+			text-align: left;
+		}
+
+		.cppi-pane pre {
+			margin: 0;
+			width: 100%;
+			box-shadow: none;
+			border-radius: 0;
+		}
+
+		.cppi-pane pre code {
+			background: #fff !important;
+			border-radius: 0;
+		}
+
+		.cppi-pane mark {
+			background: rgba(255, 199, 0, 0.55);
+		}
 	</style>
 	<script>
 		window.revealReadyQueue = window.revealReadyQueue || [];
 
-		function markCode(markTarget, text, occurrence = 1, code = document.querySelector(`pre[data-mark-target="${markTarget}"] code`)) {
+		function markCode(markTarget, text, occurrence = 1, color = null, code = document.querySelector(`pre[data-mark-target="${markTarget}"] code`)) {
 			if (!code) return false;
 
 			const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
@@ -154,17 +272,23 @@ Q&A — 53:00–60:00
 				searchFrom = idx + 1;
 			}
 
-			function locate(globalOffset) {
+			// preferNext avoids landing on the end of a line's text node when the match
+			// actually starts at the beginning of the next line (e.g. hljs-ln table rows)
+			function locate(globalOffset, preferNext = false) {
 				let offset = globalOffset;
-				for (const n of textNodes) {
-					if (offset <= n.textContent.length) return { node: n, offset };
-					offset -= n.textContent.length;
+				for (let i = 0; i < textNodes.length; i++) {
+					const n = textNodes[i];
+					const len = n.textContent.length;
+					if (offset < len || (offset === len && (!preferNext || i === textNodes.length - 1))) {
+						return { node: n, offset };
+					}
+					offset -= len;
 				}
 				const last = textNodes[textNodes.length - 1];
 				return { node: last, offset: last.textContent.length };
 			}
 
-			const start = locate(idx);
+			const start = locate(idx, true);
 			const end = locate(idx + text.length);
 
 			const range = document.createRange();
@@ -172,6 +296,7 @@ Q&A — 53:00–60:00
 			range.setEnd(end.node, end.offset);
 
 			const mark = document.createElement('mark');
+			if (color) mark.style.background = color; // omitted -> default yellow from CSS
 			mark.appendChild(range.extractContents());
 			range.insertNode(mark);
 			return true;
@@ -183,8 +308,9 @@ Q&A — 53:00–60:00
 			document.querySelectorAll(`pre[data-mark-target="${markTarget}"] code`).forEach((code) => {
 				if (code.hasAttribute(highlightedAttr)) return;
 				let found = false;
-				rules.forEach(([text, occurrence]) => {
-					if (markCode(markTarget, text, occurrence, code)) {
+				// [text, occurrence] -> default yellow; [text, occurrence, color] -> custom color
+				rules.forEach(([text, occurrence, color]) => {
+					if (markCode(markTarget, text, occurrence, color, code)) {
 						found = true;
 					}
 				});
@@ -202,150 +328,83 @@ Q&A — 53:00–60:00
 			<section data-auto-animate>
 				<img src="images/Templates_Title.png">
 				<aside class="notes">
-					[1:00 — cumulative 1:00]
-
-					Good morning / afternoon everyone, and welcome to Back to Basics: Templates.
-
-					My name is Laurent Carlier. I write embedded and low-level C++ for a living — drivers, hardware
-					abstraction layers, the kind of code where every cycle and every byte is visible.
-
-					I want to start with a confession: for a long time templates scared me. I used them, I read them,
-					but I did not feel like I owned them. That changed the day I realised that the handful of features
-					I actually needed every day fits on a few slides — and that those few features are enough to build
-					abstractions that are both powerful and free.
-
-					That is the whole talk in one sentence: with very simple template features, you can build powerful
-					and efficient abstractions.
-
-					Housekeeping: I will ask the room a few questions along the way — the 🙋 emoji is your cue. Please
-					play along, it makes this much more fun. Keep questions for the end unless something is truly
-					unclear; slides and links are at the very end.
+					<p>[0:20 — 0:20]</p>
+					<p>Hi everyone, my name is Laurent Carlier. I'm a freelance consultant from Belgium, and I write embedded and low-level C++ for a living. Today, we're going to talk about templates.</p>
 				</aside>
 			</section>
 			<!-- Slide: Goal of this presentation -->
 			<section data-auto-animate>
-				<h1>Goal of this presentation</h1>
-				<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
-					<div style="flex: 1;">
-						<ul>
-							<li class="fragment">Template allows generic programming</li>
-							<li class="fragment">Template enables type safety</li>
-							<li class="fragment">Template is performant</li>
-							<li class="fragment">Going home convinced that templates are powerful yet approachable</li>
-						</ul>
-					</div>
-					<div class="fragment" style="flex: 1;">
-						<ul>
-							<li>Templates doesn't need to be complicated</li>
-							<img src="images/UnaLearning.png" style="height: 60vh;">
-						</ul>
-					</div>
-				</div>
+				<h1>Goals of this presentation</h1>
+				<h2 class="fragment">Take home something you can use</h2>
+				<ul>
+					<li class="fragment">Template enables type safety</li>
+					<li class="fragment">Template is performant</li>
+					<li class="fragment">Template enable generic programming</li>
+				</ul>
 				<aside class="notes">
-					[1:30 — cumulative 2:30]
+					<p>[0:50 — 1:10]</p>
+					<p>Before we start, let me tell you what I want you to get out of this talk.</p>
+					<p>The first goal is that, by the end of this presentation, you should be able to go and write your own templates.
+					To convince you it's worth it, I'm going to show you that templates give you type safety, that they are performant, and that they open the door to generic programming.</p>
+				</aside>
+			</section>
 
-					Here is what I want you to walk out with. Four things.
-
-					(fragment 1) Templates allow generic programming — one piece of source code that serves many
-					types, without copy-paste and without the pre-processor.
-
-					(fragment 2) Templates enable type safety — and this is the part people forget. A template is not
-					a hole in the type system; it is a way to let the compiler check more things, not fewer. We will
-					see an example at the end where the compiler refuses to let you write a field into the wrong
-					hardware register.
-
-					(fragment 3) Templates are performant. Everything is resolved at compile time. No vtable, no
-					indirection, no allocation. At the end of the talk I will show you two functions — one written with
-					a template abstraction, one written by hand with raw bit twiddling — and they compile to the exact
-					same assembly. Instruction for instruction.
-
-					(fragment 4) And the last one is the real goal: I want you to go home convinced that templates are
-					powerful yet approachable.
-
-					(fragment 5 — the un-learning picture) Because a lot of us carry a mental image of templates as
-					this monstrous, unreadable, compiler-error-generating machine. Some of that reputation is earned —
-					by template metaprogramming. But that is not what we are doing today. Today is the 20% of
-					templates that gives you 95% of the value. So: a bit of un-learning.
+			<section data-auto-animate>
+				<h1>Goals of this presentation</h1>
+				<h2>Template doesn't need to be complicated</h2>
+				<!-- For AI: this image is my cat looking at the screen. I want to say that
+				     since I gave the talk to my cat and it understood it then templates
+					 can be understood by anyone. -->
+				<img src="images/UnaLearning.png" style="height: 85vh;">
+				<aside class="notes">
+					<p>[0:30 — 1:40]</p>
+					<p>The second goal is to show you that templates don't have to be complicated. With just a handful of features, you can already write efficient and performant code.
+					And by the way, I gave this presentation to my cat, and she understood everything. So I'm sure you will too.</p>
 				</aside>
 			</section>
 
 			<!-- Slide: Ground rules + agenda -->
-			<section data-auto-animate>
-				<h1>Ground rules</h1>
-				<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
-					<div style="flex: 1;">
-						<ul>
-							<li class="fragment">Teach by example</li>
-							<li class="fragment">Focus on the most common use cases</li>
-							<li class="fragment">Warn about common pitfalls</li>
-							<li class="fragment">🐰 Avoid getting into the rabbit hole 🐰</li>
-						</ul>
-					</div>
-					<div class="fragment" style="flex: 1;">
-						<h2>What we will cover</h2>
-						<ul>
-							<li>Syntax &amp; function templates</li>
-							<li>Implicit requirements</li>
-							<li>Template argument deduction</li>
-							<li>Variadic templates &amp; perfect forwarding</li>
-							<li>Class templates</li>
-							<li>3 real-world examples</li>
-						</ul>
-					</div>
-				</div>
-				<p class="fragment">🐰 Not today: SFINAE, concepts, partial specialization, template metaprogramming 🐰
-				</p>
+			<section data-auto-animate class="slide-ground-rules">
+				<h1>Presentation philosophy</h1>
+				<ul>
+					<li class="fragment">Teach by examples</li>
+					<li class="fragment">Explain the feature used in the examples</li>
+					<li class="fragment">Warn about common pitfalls</li>
+				</ul>
 				<div class="fragment"
-					style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(92%, 1200px); padding: 24px 28px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
-					<p style="text-align: center; margin: 0 0 0.4em 0;"><strong>Why not cover every template
-							feature?</strong></p>
-					<div style="display: flex; gap: 32px; align-items: center;">
-						<div style="flex: 1.1;">
-							<ul style="margin-left: 1em;">
-								<li>It has already been done &mdash; very well</li>
-								<li>Nicolai Josuttis, <i>Back To Basics: Templates</i>, CppCon 2022</li>
-								<li>Today: only the basics needed for the real-world examples at the end</li>
-							</ul>
-							<p style="text-align: center;"><a
-									href="https://youtu.be/HqsEHG0QJXU">https://youtu.be/HqsEHG0QJXU</a></p>
-						</div>
-						<div style="flex: 1;">
-							<a href="https://youtu.be/HqsEHG0QJXU"><img
-									src="images/josuttis-back-to-basics-templates.jpg"
-									alt="Nicolai Josuttis - Back To Basics: Templates, CppCon 2022"
-									style="width: 100%; border-radius: 10px; margin: 0;"></a>
-						</div>
-					</div>
+					style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(92%, 1200px); padding: 24px 28px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
+					<p style="text-align: center;"><strong>Nicolai Josuttis, <i>Back To Basics: Templates</i>, CppCon 2022</strong></p>
+			
+			
+					<a href="https://youtu.be/HqsEHG0QJXU"><img src="images/josuttis-back-to-basics-templates.jpg"
+							alt="Nicolai Josuttis - Back To Basics: Templates, CppCon 2022"
+							style="width: 100%; border-radius: 10px; margin: 0;"></a>
+					<p style="text-align: center;"><a href="https://youtu.be/HqsEHG0QJXU">https://youtu.be/HqsEHG0QJXU</a></p>
+			
 				</div>
 				<aside class="notes">
-					[1:30 — cumulative 4:00]
+					<p>[1:25 — 3:05]</p>
+					<p>Templates are a huge topic, and you could easily spend days on them. So, given the goals of this talk and the time I have, I settled on the following philosophy.</p>
+					<p>I like to keep things simple, so I'm going to show you a lot of examples. And at the end of the presentation, we'll look at three examples taken from production code.</p>
+					<p>To make sure those examples make sense to you, I'll explain, from the basics, every feature they use. Because of the time constraint, I won't be able to go further than that.</p>
+					<p>And of course, this is a Back to Basics talk, so I'll also point out the common mistakes people make with these features.</p>
+					<p>After this talk, I'd really encourage you to watch Nicolai Josuttis's recording. He gave a talk with the same title, and he goes into much more detail than I will today.</p>
+				</aside>
+			</section>
 
-					Four ground rules for the next hour.
-
-					(1) Teach by example. Almost no standardese. If you want the exact wording of the standard, it is
-					one cppreference tab away.
-
-					(2) Focus on the most common use cases — the things you will actually type this month.
-
-					(3) Warn about common pitfalls. Every time I show you something that works, I will also show you
-					the shape of the bug that lives next door.
-
-					(4) And the important one: avoid the rabbit hole. Templates have infinite depth. Every slide today
-					has a trapdoor I am deliberately not opening.
-
-					(agenda fragment) Here is the road map: syntax and function templates, implicit requirements —
-					which is the single most important concept of this talk — argument deduction, variadic templates
-					and perfect forwarding, class templates, and then three real-world examples. Roughly: forty
-					minutes of building blocks, then we put them to work.
-
-					(not-today fragment) Explicitly not today: SFINAE, concepts, partial specialization, template
-					metaprogramming. If you came for enable_if, I am sorry — and also, you're welcome.
-
-					(Josuttis fragment) "Why not cover everything?" Because it has already been done, extremely well.
-					Nicolai Josuttis gave the reference Back To Basics: Templates talk at CppCon 2022. Watch it — link
-					is on the slide. My talk is deliberately narrower: only the basics we need to build the three
-					examples at the end. I would rather you leave with three things you can use than thirty you cannot
-					remember.
+			<section data-auto-animate>
+				<h1>⏰ Agenda of today ⏰</h1>
+				<ul>
+					<li>Syntax &amp; function templates</li>
+					<li>Implicit requirements</li>
+					<li>Template argument deduction</li>
+					<li>Variadic templates &amp; perfect forwarding</li>
+					<li>Class templates</li>
+					<li>3 production code examples</li>
+				</ul>
+				<aside class="notes">
+					<p>[0:25 — 3:30]</p>
+					<p>This slide gives an overview of what we will cover today. We will start with syntax and function templates, then move on to implicit requirements, template argument deduction, variadic templates and perfect forwarding, class templates, and finally, three production code examples.</p>
 				</aside>
 			</section>
 
@@ -355,41 +414,32 @@ Q&A — 53:00–60:00
 				<p>A template defines a family of <b>functions</b>, <b>classes</b>, <b>type aliases</b>,
 					<b>variables</b> or <b>concepts</b>.
 				</p>
-				<p>Today we only need the first two.</p>
 				<pre><code class="language-cpp">template&lt; [parameter-list] &gt;
-declaration</code></pre>
+recipe</code></pre>
 				<p><code>parameter-list</code> can be:</p>
 				<ul>
-					<li>type parameter e.g. <code>int</code>, <code>std::string</code></li>
-					<li>non type template parameter (aka NTTP) e.g. enum value, constexpr value</li>
-					<li>template parameter pack using ellipsis <code
+					<li>type parameter e.g. <code>std::string</code></li>
+					<li>non type parameter (aka NTTP) e.g. enum value, constexpr value</li>
+					<li>parameter pack using ellipsis <code
 							style="background-color: var(--code-background);">...</code></li>
-					<li>template template parameter e.g. <code>template&lt;typename&gt; class</code></li>
+					<li>template parameter e.g. <code>template&lt;typename&gt; class</code></li>
 				</ul>
-				<p><code>declaration</code> can be:</p>
-				<ul>
-					<li>a (class member) function</li>
-					<li>a class/struct</li>
-					<li>a type alias</li>
-				</ul>
+				<div class="fragment">
+				<p><code>recipe</code> can be:</p>
+					<ul>
+						<li>function declaration</li>
+						<li>a class/struct declaration</li>
+						<li>a type alias declaration</li>
+						<li>variable declaration</li>
+						<li>concept declaration</li>
+					</ul>
+				</div>
 				<aside class="notes">
-					[1:00 — cumulative 5:00]
-
-					The syntax, in one line: the keyword `template`, angle brackets with a parameter list, then a
-					declaration. That is it.
-
-					Key mental model — say this slowly: a template is not code. A template is a recipe the compiler
-					uses to generate code. Nothing exists until you instantiate it.
-
-					The parameter list can hold four kinds of things. A type parameter — by far the most common, 90% of
-					what you write. A non-type template parameter, an NTTP: a compile-time *value*, like an integer or
-					an enum — that is how `std::array<int, 4>` gets its size. A parameter pack with the ellipsis, which
-					means "zero or more". And a template template parameter, which is a template that takes a template
-					— we will not use that one today, I just want you to recognise it if you meet it.
-
-					And the declaration can be a function, a class, a type alias, a variable, or a concept. Today we
-					only need the first two: function templates and class templates. Don't memorise this slide — it is
-					a map, not a test.
+					<p>[0:45 — 4:15]</p>
+					<p>A template comes in exactly 5 forms: class templates, function templates, alias templates, variable templates, and concepts.</p>
+					<p>The syntax works as follows. You write the keyword `template`, followed by angle brackets containing the parameter list, and then the declaration of the entity you are defining.</p>
+					<p>In between the angle brackets, you list the template parameters, which can be type parameters, non-type parameters, parameter packs, or template parameters.</p>
+					<p>The recipe then contains the declaration of the form that you are defining.</p>
 				</aside>
 			</section>
 
@@ -404,33 +454,14 @@ void mySwap(Swappable&amp; a, Swappable&amp; b) {
 	b = std::move(tmp);
 }</code></pre>
 				<p class="fragment">💡 Give good name to template parameters</p>
-				<p class="fragment">⚠️ The compiler does not produce any code if the template is not
-					instantiated</p>
-				<p class="fragment">⚠️ The definition is <b><u>usually</u></b> visible in every translation unit that
-					instantiates it <small>(but doesn't have
-						to)</small></p>
+				<p class="fragment">⚠️ The compiler does not produce any code if the template is not instantiated</p>
 				<aside class="notes">
-					[1:30 — cumulative 6:30]
-
-					Our first real template: `mySwap`. Six lines. Read it — it is exactly the swap you would write by
-					hand, except the type is a parameter.
-
-					This single declaration defines a *family* of functions. Not one function: a family. One member per
-					type you call it with.
-
-					(fragment 1) First tip, and it costs nothing: give your template parameters good names. I wrote
-					`Swappable`, not `T`. The name is free documentation — it tells the reader what the type has to be
-					able to do. `T` tells them nothing. This matters even more once you have three or four parameters.
-
-					(fragment 2) Second — and this surprises people — the compiler produces *no code at all* for a
-					template that is never instantiated. Put this in a header, never call it, and there is not a single
-					byte in your binary. You pay only for what you use.
-
-					(fragment 3) Third: the definition usually has to be visible in every translation unit that
-					instantiates it. That is why templates live in headers. The "usually" is deliberate — you can put
-					the definition in a .cpp and explicitly instantiate it there for a fixed set of types. That is a
-					real technique for cutting compile times when you know your types up front. Rabbit hole — moving
-					on.
+					<p>[1:10 — 5:25]</p>
+					<p>Let's define our first family. Here I'm showing a function template that defines a family of swap functions for different types.</p>
+					<p>To tell the compiler that we expect a type parameter, we use the keyword typename followed by a template parameter identifier. Notice that it is not T.</p>
+					<p>Then we can use that identifier to declare function parameters in our function signature or we can also use that identifier to declare an instance of that type in our function.</p>
+					<p>This really looks like a function but the difference with a normal function is that some types are not known at the time of writing the function. Those are the template parameters.</p>
+					<p>Because the types are not known, the compiler does not produce any code at this stage. We need to instantiate the template.</p>
 				</aside>
 			</section>
 
@@ -451,9 +482,9 @@ void mySwap(Swappable&amp; a, Swappable&amp; b) {
 						<pre class><code class="language-cpp" data-line-numbers>int a = 5, b = 10;
 mySwap(a, b);
 assert(a == 10 &amp;&amp; b == 5);</code></pre>
-						<pre class="fragment"><code class="language-cpp" data-line-numbers>float a = 3.14f, b = 2.71f;
-mySwap(a, b);
-assert(a == 2.71f &amp;&amp; b == 3.14f);</code></pre>
+						<pre class="fragment"><code class="language-cpp" data-line-numbers>float c = 3.14f, d = 2.71f;
+mySwap(c, d);
+assert(c == 2.71f &amp;&amp; d == 3.14f);</code></pre>
 					</div>
 				</div>
 				<div class="fragment">
@@ -463,60 +494,90 @@ int i = 42;
 mySwap(i, f); // ❌ Does not compile</code></pre>
 				</div>
 				<aside class="notes">
-					[1:30 — cumulative 8:00]
-
-					Same template on the left, and now we use it.
-
-					Call it with two ints — notice I did *not* write `mySwap<int>`. The compiler looked at the
-					arguments and worked out that `Swappable` is `int`. That is template argument deduction; we will
-					come back to it properly in a few minutes.
-
-					(fragment) Call it with two floats — same source, a second function appears. And I could keep
-					going: `std::string`, my own `Matrix` class, anything movable.
-
-					(fragment — the failure) Now the important one. Two *different* types: an `int` and a `float`.
-					This does not compile. Why? Look at the signature: there is one parameter, `Swappable`, and it
-					appears twice. The first argument says "I'm an int", the second says "I'm a float". The compiler
-					will not pick a winner and it will not silently convert — it gives up and tells you deduction
-					failed.
-
-					And that is *correct behaviour*. Think about what a swap between an int and a float would even
-					mean. Hold on to this: one parameter appearing twice means "these two must be the same type", and
-					the compiler enforces it for free. Compare that with a macro, which would happily paste anything in
-					— we get there in about five minutes.
+					<p>[1:05 — 6:30]</p>
+					<p>In order to instantiate the template, we need to call it like we would call a regular function.
+					For instance, if I declare 2 ints a and b, I can call mySwap with a and b.
+					Similarly, if I declare 2 floats c and d, I can call mySwap with c and d.</p>
+					<p>Notice that in both cases I didn't have to specify the template parameter. This is because we have a feature called template argument deduction and we are going to come back on it later.</p>
+					<p>Now if I call mySwap with 2 variables of 2 different types, the code will fail to compile. This shows that the template enforces type consistency for its parameters hence enabling type safety.</p>
 				</aside>
 			</section>
 
 			<section data-auto-animate>
 				<h1>Function template</h1>
-				<h2>Defines a family of functions</h2>
+				<h2>Defines a family of functions 🔎</h2>
+				<div class="cppi-window">
+					<div class="cppi-titlebar">
+						<span class="cppi-dot red"></span>
+						<span class="cppi-dot yellow"></span>
+						<span class="cppi-dot green"></span>
+						<span class="cppi-url">cppinsights.io/s/b05df164</span>
+					</div>
+					<div class="cppi-panes">
+						<div class="cppi-pane">
+							<p class="cppi-pane-label">Source:</p>
+							<pre data-mark-target="cppi-swap-src"><code class="language-cpp" data-line-numbers>template&lt;typename Swappable&gt;
+void mySwap(Swappable&amp; a, Swappable&amp; b) {
+	Swappable tmp = std::move(a);
+	a = std::move(b);
+	b = std::move(tmp);
+}
+
+int a = 5, b = 10;
+mySwap(a, b);
+
+float c = 3.14f, d = 2.71f;
+mySwap(c, d);</code></pre>
+						</div>
+						<div class="cppi-pane">
+							<p class="cppi-pane-label">Insight:</p>
+							<pre data-mark-target="cppi-swap-insight"><code class="language-cpp" data-line-numbers>template&lt;&gt;
+void mySwap&lt;int&gt;(int&amp; a, int&amp; b)
+{
+	int tmp = std::move(a);
+	a = std::move(b);
+	b = std::move(tmp);
+}
+
+template&lt;&gt;
+void mySwap&lt;float&gt;(float&amp; a, float&amp; b)
+{
+	float tmp = std::move(a);
+	a = std::move(b);
+	b = std::move(tmp);
+}</code></pre>
+						</div>
+					</div>
+				</div>
 				<p>⚠️ The compiler generates code for each instantiation.</p>
-				<img src="images/functionInstantiation.png">
 				<p><a href="https://cppinsights.io/s/b05df164">https://cppinsights.io/s/b05df164</a></p>
+				<script>
+					window.revealReadyQueue.push(() => {
+						setTimeout(() => {
+							highlightMarkedCode('cppi-swap-src', [
+								['mySwap(a, b);', 1],
+								['mySwap(c, d);', 1],
+							]);
+							highlightMarkedCode('cppi-swap-insight', [
+								['void mySwap<int>(int& a, int& b)', 1],
+								['void mySwap<float>(float& a, float& b)', 1],
+							]);
+						}, 100);
+					});
+				</script>
 				<aside class="notes">
-					[1:00 — cumulative 9:00]
-
-					Let me show you what "a family of functions" actually means, because this is not hand-waving.
-
-					This is C++ Insights — a fantastic tool, it runs a Clang front-end and shows you the code the
-					compiler generated. Link is on the slide, and I encourage you to paste your own templates in there
-					later; it demystifies a lot.
-
-					You can see it right there: from one template, the compiler emitted a separate, complete,
-					fully-typed `mySwap` for `int` and another one for `float`. Concrete functions, no generics left,
-					nothing to resolve at run time. The optimiser then treats them like any hand-written function —
-					which is exactly why templates are fast.
-
-					The trade-off — and let's be honest about it — is compile time and potentially code size. Every
-					instantiation is real work for the compiler and real bytes in the binary. This is why heavily
-					templated code builds slowly. Worth knowing, rarely worth worrying about at this level.
+					<p>[0:50 — 7:20]</p>
+					<p>Let's see exactly the impact of template instantiation on our program. To do that I'm going to use C++ Insights. It is a fantastic tool developed by Andreas that runs a Clang front-end and reveals the code the compiler produces for templates.</p>
+					<p>We can see that for each instantiation of mySwap, the compiler generates a separate, fully-typed function. This can have an impact on the binary size. The more instantiations with different types, the bigger the code size.</p>
+					<p>However the optimizer is there to help you and the outcome is the same as if you would have written the function separately.</p>
 				</aside>
 			</section>
 
 			<!-- Slide: two-phase lookup -->
 			<section data-auto-animate>
 				<h1>Function template</h1>
-				<h2>How are function templates processed?</h2>
+				<h2>How are function templates compiled?</h2>
+				<p><b>Two-phase name lookup</b></p>
 				<pre data-id="mySwap"><code class="language-cpp" data-line-numbers>template&lt;typename Swappable&gt;
 void mySwap(Swappable&amp; a, Swappable&amp; b) {
 	Swappable tmp = std::move(a);
@@ -527,40 +588,15 @@ void mySwap(Swappable&amp; a, Swappable&amp; b) {
 int a = 5, b = 10;
 mySwap(a, b);
 </code></pre>
-				<div class="fragment">
-					<p><b><u>Two-phase name lookup</u></b></p>
-					<p>First, the compiler checks for syntax</p>
-					<p>Second the template argument is substituted in for the template parameter</p>
-				</div>
+				<p class="fragment">First, the compiler checks for syntax</p>
+				<p class="fragment">Second the template argument is substituted in for the template parameter</p>
 				<p class="fragment">⚠️ The code can compile until a function template is called</p>
-				<p class="fragment">⚠️ Same for class templates: only the member functions you call are instantiated
-					<small><a href="https://godbolt.org/z/n7K1PKdrs">https://godbolt.org/z/n7K1PKdrs</a></small>
-				</p>
 				<aside class="notes">
-					[1:30 — cumulative 10:30]
-
-					How does the compiler actually process this? The mechanism is called two-phase name lookup, and
-					knowing it explains a whole class of confusing behaviour.
-
-					(fragment) Phase one happens when the compiler *reads* the template, before it knows any types. It
-					checks syntax and resolves every name that does not depend on the template parameter. Missing
-					semicolon, unbalanced brace, calling a function that does not exist anywhere — caught here.
-
-					Phase two happens at instantiation, when the template argument is substituted in. Only now can the
-					compiler check the things that depend on the type: does `Swappable` actually have a move
-					constructor? Does `operator>` exist?
-
-					(fragment) Consequence, and this is the one that bites: your code can compile perfectly happily
-					until the day someone calls the function template. You can ship a broken template. The bug is
-					dormant, and it wakes up at the call site — which is why template errors point at *your* line and
-					not at the library's.
-
-					(fragment) Same story for class templates, and even more finely grained: only the member functions
-					you actually *call* get instantiated. A member function with total nonsense in it will sit there
-					quietly as long as nobody calls it. Godbolt link on the slide proves it.
-
-					Practical takeaway: unit-test your templates with every type you claim to support. "It compiles" is
-					not the same guarantee it is for normal code.
+					<p>[1:05 — 8:25]</p>
+					<p>Let's now understand how the compiler compiles the template function.
+					It uses a mechanism called two-phase name lookup.</p>
+					<p>During the first phase, the compiler is going to check the syntax. It will also check that the names that do not depend on the template parameter are valid. It will also check that the operations on the types that do not depend on the template parameter are valid.</p>
+					<p>During the second phase, the compiler will replace the type it has deduced from the function call into the function and redo a second round of check to see whether the type exists and that the operation on them is legal.</p>
 				</aside>
 			</section>
 
@@ -602,192 +638,21 @@ void mySwap(T&amp; a, T&amp; b) {
 						<li><code class="language-cpp">T</code> must have a function member <code
 								class="language-cpp">T::fun(int)</code></li>
 						<li><code class="language-cpp">T</code> must have a nested type <code
-								class="language-cpp">T::REG</code></li>
+								class="language-cpp">T::TYPE</code></li>
 						<li><code class="language-cpp">T</code> must have a <code
 								class="language-cpp">static</code> function member</li>
 					</ul>
-					<p style="text-align: center; margin-bottom: 0;">👉 The 3 examples at the end of this talk are
-						built on <b>nothing but</b> implicit requirements 👈</p>
+					<p style="text-align: center; margin-bottom: 0;">👉 Implicit requirement is a very important notion 👈</p>
 				</div>
 				<aside class="notes">
-					[2:00 — cumulative 12:30]
-
-					This is the most important slide of the first half. If you remember one concept from today, make it
-					this one.
-
-					An implicit requirement is the set of operations and properties a type must support for the template
-					to compile. "Implicit" because it is nowhere in the signature — it is hidden in the body.
-
-					(fragment) So: audience question. Here is `mySwap` again. What are the implicit requirements on
-					`T`? Shout them out.
-
-					[Wait. Genuinely wait — count to five. Take two or three answers. Expect "move constructible" and
-					"move assignable"; if someone says "copyable", that is the perfect wrong-but-close answer — point
-					out that `std::move` on a type without a move constructor silently falls back to copy.]
-
-					(fragment) Two requirements. `T` must be move constructible — line 3. And move assignable — lines
-					4 and 5. That is the entire contract, and it is written nowhere except in the implementation.
-
-					That is the double edge. It is powerful: any type satisfying the contract just works, including
-					types written years after the template. And it is dangerous: nothing tells your user what the
-					contract *is* until they violate it and get a wall of errors.
-
-					(fragment) In C++20, concepts let you state the contract in the signature — here, the `swappable`
-					concept. The error message becomes one line instead of forty. Before C++20 — and I know many of you
-					are on C++14 or C++17 — write it in a comment above the template. Seriously. A three-line comment
-					saying "T must be move constructible and move assignable" saves the next person an hour.
-
-					(fragment — the box) And requirements are not just operators. A type can be required to have a
-					public data member, a member function with a given signature, a *nested type*, a static member
-					function. Any of these is a valid contract.
-
-					Remember that last line, because it is the bridge to the second half: the three real-world examples
-					at the end are built on nothing but implicit requirements. No inheritance, no virtual, no concepts.
-					Just "your type must provide these things".
-				</aside>
-			</section>
-
-			<!-- Slide: the C macro, naive version -->
-			<section data-auto-animate>
-				<h1>Before templates: the C macro</h1>
-				<h2>Generic code without the language's help</h2>
-				<p>One <code>MAX</code> for every type &mdash; the pre-processor only pastes text.</p>
-				<pre data-id="maxMacro"><code class="language-cpp" data-line-numbers>#define MAX(a, b) a &gt; b ? a : b</code></pre>
-				<div class="fragment">
-					<p>What does this print? 🤔</p>
-					<pre><code class="language-cpp">std::printf("%d\n", MAX(1, 2) + 3);</code></pre>
-					<p>🙋‍♂️🙋‍♀️</p>
-				</div>
-				<div class="fragment">
-					<p>The pre-processor expands it to</p>
-					<pre data-mark-target="macroPrecedence"><code class="language-cpp">std::printf("%d\n", 1 &gt; 2 ? 1 : 2 + 3); // prints 5 😱</code></pre>
-					<p>⚠️ A macro has no notion of operator precedence ⚠️</p>
-				</div>
-				<script>
-					window.revealReadyQueue.push(() => {
-						markCode('macroPrecedence', '2 + 3');
-					});
-				</script>
-				<aside class="notes">
-					[1:30 — cumulative 14:00]
-
-					Before templates, C programmers still needed generic code. The tool they had was the pre-processor.
-					I want to spend three minutes here, because the contrast is the best possible argument for
-					templates — and because this code is still in your codebase. I promise.
-
-					Here is `MAX`. It looks fine. It is not a function — the pre-processor just pastes text, before the
-					compiler sees anything.
-
-					(fragment) Question for the room: what does this print? `printf("%d", MAX(1, 2) + 3)`.
-
-					[Wait for answers. Most people say 5 — because max is 2, plus 3. A few will smell the trap. Let
-					them argue for a moment.]
-
-					(fragment) It prints 5, but not for the reason you think. Look at the expansion: `1 > 2 ? 1 : 2 +
-					3`. The `+ 3` got absorbed into the *false branch* of the conditional. The condition is false, so
-					we evaluate `2 + 3` — five. The right answer by accident. Change it to `MAX(2, 1) + 3` and you get
-					2, not 5.
-
-					Why? Because a macro has no notion of operator precedence. It is text substitution. It does not know
-					what an expression is.
-				</aside>
-			</section>
-
-			<!-- Slide: the C macro, parenthesised version is still broken -->
-			<section data-auto-animate>
-				<h1>Before templates: the C macro</h1>
-				<h2>Parentheses everywhere... still broken</h2>
-				<pre data-id="maxMacro"><code class="language-cpp" data-line-numbers>#define MAX(a, b) ((a) &gt; (b) ? (a) : (b))</code></pre>
-				<div class="fragment">
-					<pre><code class="language-cpp" data-line-numbers>int i = 10, j = 5;
-int m = MAX(i++, j); // expected: m == 10 and i == 11</code></pre>
-				</div>
-				<div class="fragment">
-					<p>But <code>i++</code> is pasted twice</p>
-					<pre data-mark-target="macroDoubleEval"><code class="language-cpp">int m = ((i++) &gt; (j) ? (i++) : (j)); // m == 11 and i == 12 😱</code></pre>
-					<p>⚠️ Arguments are evaluated as many times as they appear ⚠️</p>
-				</div>
-				<ul class="fragment">
-					<li>❌ No type checking: <code>MAX(1u, -1)</code> silently returns <code>4294967295</code></li>
-					<li>❌ Not scoped: ignores namespaces, cannot be a class member</li>
-					<li>❌ Invisible to the debugger and to tooling</li>
-					<li>❌ Nothing stops a header from defining <code>min</code>/<code>max</code> for you 😱</li>
-				</ul>
-				<script>
-					window.revealReadyQueue.push(() => {
-						markCode('macroDoubleEval', 'i++', 1);
-						markCode('macroDoubleEval', 'i++', 2);
-					});
-				</script>
-				<aside class="notes">
-					[1:30 — cumulative 15:30]
-
-					"Fine," you say, "I know that one — parentheses everywhere." Good. Parenthesise every parameter and
-					the whole body. Precedence bug: fixed.
-
-					(fragment) Now call it with `MAX(i++, j)`. You expect `m == 10` and `i == 11`.
-
-					(fragment) But `i++` is pasted *twice* — once in the condition, once in the true branch. So `i` is
-					incremented twice: `m` is 11, `i` is 12. Both wrong, silently.
-
-					A macro evaluates its arguments as many times as they appear. Any side effect — increment, a
-					function call, a volatile read from a hardware register — happens more than once. In embedded code
-					this is not a style issue, it is a hardware bug.
-
-					(fragment — the list) And it gets worse. No type checking: `MAX(1u, -1)` compares an unsigned and a
-					signed, the `-1` converts to four billion, and the macro cheerfully returns it. The compiler is not
-					even asked. Not scoped: macros ignore namespaces, cannot be class members, cannot be qualified.
-					Invisible to the debugger, to your IDE, to static analysers — you cannot step into a macro. And my
-					favourite: any header can define `min` and `max` for you. Ask anyone who has included `windows.h`
-					and then tried to call `std::max`.
-
-					Five separate categories of problem. Every single one disappears with a template.
-				</aside>
-			</section>
-
-			<!-- Slide: the template replaces the macro -->
-			<section data-auto-animate>
-				<h1>Don't write macros, write templates</h1>
-				<h3>A generic <code>myMax</code></h3>
-				<pre data-id="myMax"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
-T myMax(T a, T b) {
-	return a &gt; b ? a : b;
-}</code></pre>
-				<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
-					<div style="flex: 1;">
-						<pre><code class="language-cpp" data-line-numbers>int i = 10, j = 5;
-
-myMax(5, 4) + 3;        // == 8 👍
-auto m = myMax(i++, j); // m == 10, i == 11 👍
-myMax(1u, -1);          // ❌ does not compile 👍</code></pre>
-					</div>
-					<div class="fragment" style="flex: 1;">
-						<ul>
-							<li>👍 Precedence is respected</li>
-							<li>👍 Arguments are evaluated exactly once</li>
-							<li>👍 The compiler checks the types</li>
-							<li>👍 Obeys namespaces, can be a class member</li>
-							<li>👍 Debuggable</li>
-						</ul>
-					</div>
-				</div>
-				<aside class="notes">
-					[1:00 — cumulative 16:30]
-
-					Same idea, four lines, as a template. `myMax`.
-
-					Go through the same three calls. `myMax(5, 4) + 3` is 8 — correct, because this is a real function
-					call and precedence applies normally. `myMax(i++, j)` gives 10 with `i` at 11 — correct, because
-					arguments to a function are evaluated exactly once. And `myMax(1u, -1)` does not compile — which is
-					a *feature*. The compiler cannot deduce one `T` from `unsigned` and `int`, so it stops you instead
-					of handing you four billion.
-
-					(fragment) Plus: it obeys namespaces, it can be a class member, it is visible to the debugger and
-					to tooling. You can set a breakpoint in it.
-
-					So here is the first concrete takeaway of the talk, and it is one you can apply on Monday: don't
-					write function-like macros. Write templates. Cost: the word `template` and a pair of angle
-					brackets. Benefit: five classes of bug, gone.
+					<p>[1:40 — 10:05]</p>
+					<p>This brings us to one of the most important notions of this talk. Implicit requirements. The implicit requirements are the set of operations that a type must support for the template to compile. "Implicit" because they are not stated in the template's signature but are hidden in the body of the template.</p>
+					<p>Let's see if you have followed what I said until now. Can anyone tell me what are the implicit requirements of the `mySwap` template?</p>
+					<p>T must be move constructible from line 3 and must be move assignable from line 4 and 5.</p>
+					<p>When implicit requirements aren't met this is the point where the compiler will generate an error, often with messages that can be difficult to decipher.</p>
+					<p>Fortunately from C++ 20, we can use concepts to explicitly specify these requirements. I invite you to follow the talk of Amir Kirsh on Friday.</p>
+					<p>If you are not using C++20, I seriously recommend you to write the implicit requirements as a comment in the code.</p>
+					<p>It is to be noted that there are plenty of different implicit requirements, for instance...</p>
 				</aside>
 			</section>
 
@@ -795,8 +660,7 @@ myMax(1u, -1);          // ❌ does not compile 👍</code></pre>
 			<section data-auto-animate>
 				<h1>Template argument deduction</h1>
 				<h2>General</h2>
-				<p>Template argument deduction is the process by which the compiler determines the template arguments
-					from the function arguments.</p>
+				<p>Templates argument are deduced from the function arguments</p>
 				<div class="fragment">
 					<p>For instance</p>
 					<pre data-id="argDeduct"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
@@ -812,28 +676,19 @@ void fun() {
 				</div>
 				<p class="fragment">Calling <code>myMax(a, b)</code> deduces <code>T = int</code></p>
 				<aside class="notes">
-					[1:00 — cumulative 17:30]
-
-					We have been quietly relying on this since slide five, so let's name it. Template argument deduction
-					is the process by which the compiler works out the template arguments from the *function*
-					arguments.
-
-					This is the feature that makes templates pleasant to use. Without it, every call would need explicit
-					angle brackets and nobody would bother.
-
-					(fragment) Here, `a` and `b` are `int`s, so `T` is deduced as `int`, and the `static_assert`
-					confirms `c` is an `int`. Note the assert runs at compile time — it costs nothing at run time. It
-					is a great habit for pinning down what your templates actually do.
-
-					You already use this constantly without thinking: every time you write `std::max`, `std::sort`, or a
-					range-for over a container, deduction is doing the work.
+					<p>[0:50 — 10:55]</p>
+					<p>Let's move on now to the next topic which is the template argument deduction.</p>
+					<p>For this section I'm using a simple `myMax` template as an example. It takes two values of the same type and returns the greater one.</p>
+					<p>The way argument deduction works is that the compiler looks at the types of the function arguments and tries to match them to the template parameters.</p>
+					<p>[next fragment]</p>
+					<p>In this case, the function arguments `a` and `b` are both of type `int`, so the compiler deduces that `T` must be `int`.</p>
 				</aside>
 			</section>
 
 			<!-- Slide: Template argument deduction another example -->
 			<section data-auto-animate>
 				<h1>Template argument deduction</h1>
-				<h2>What type is deduced?</h2>
+				<h2>Type deduction</h2>
 				<p>Another example</p>
 				<pre data-id="argDeduct"><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
 T myMax(T a, T b) {
@@ -843,33 +698,29 @@ T myMax(T a, T b) {
 void fun() {
 	auto c = myMax(5.1, 5.2);
 }</code></pre>
-				<p>What type is <code>T</code> deduced ?</p>
-				<p>🙋‍♂️🙋‍</p>
+				<p>What does <code>T</code> deduced to ?</p>
+				<p>🙋‍♂️🙋‍♀️</p>
 				<div class="fragment">
 					<pre><code class="language-cpp">double</code></pre>
 				</div>
 				<aside class="notes">
-					[0:30 — cumulative 18:00]
-
-					Quick one, keep the pace up. `myMax(5.1, 5.2)` — what is `T`?
-
-					[Short pause. Someone will say float. Let them.]
-
-					(fragment) `double`. An unsuffixed floating-point literal in C++ is a `double`, never a `float`.
-					You would need `5.1f`.
-
-					Small thing, but it matters on embedded targets where `double` arithmetic may be emulated in
+					<p>[0:45 — 11:40]</p>
+					<p>Another quick one, keep the pace up. `myMax(5.1, 5.2)` — what is `T`?</p>
+					<p>[Short pause. Someone will say float. Let them.]</p>
+					<p>(fragment) `double`. An unsuffixed floating-point literal in C++ is a `double`, never a `float`.
+					You would need `5.1f`.</p>
+					<p>Small thing, but it matters on embedded targets where `double` arithmetic may be emulated in
 					software and cost you a hundred cycles. Deduction gives you exactly what you wrote — no more, no
-					less. If you wrote the wrong literal, you get the wrong type.
+					less. If you wrote the wrong literal, you get the wrong type.</p>
 				</aside>
 			</section>
+
 
 			<!-- Slide: Explicit template argument forcing float -->
 			<section data-auto-animate>
 				<h1>Template argument deduction</h1>
-				<h2>When you must say it explicitly</h2>
-				<p>Provide the template argument <b><u>explicitly</u></b> to force using <code
-						class="language-cpp">float</code></p>
+				<h2>Explicit template arguments</h2>
+				<p>Provide the template argument <b><u>explicitly</u></b> to override deduction</p>
 				<pre data-id="argDeduct" data-mark-target="myMax-call"><code class="language-cpp">template&lt;typename T&gt;
 T myMax(T a, T b) {
 	return a &gt; b ? a : b;
@@ -886,31 +737,185 @@ T parse(const std::string&amp; text);
 int i  = parse("42");      // ❌ Does not compile
 auto i = parse&lt;int&gt;("42"); // 👍</code></pre>
 				</div>
-				<p class="fragment">💡 Remember this: some templates can <b>only</b> be called with explicit
-					arguments 💡</p>
 				<script>
 					window.revealReadyQueue.push(() => {
 						markCode('myMax-call', '<float>');
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 19:30]
-
-					If you don't want what deduction gives you, you can override it: write the template argument
+					<p>[1:05 — 12:45]</p>
+					<p>If you don't want what deduction gives you, you can override it: write the template argument
 					explicitly. `myMax&lt;float&gt;(5.1, 5.2)`. Now `T` is `float`, deduction is skipped entirely, and
-					the `double` literals are converted at the call.
+					the `double` literals are converted at the call.</p>
 
-					Explicit arguments always win. Deduction only fills in what you did not specify.
+					<p>Explicit arguments always win. Deduction only fills in what you did not specify.</p>
 
-					(fragment) Now a rule that catches everybody at least once: template arguments are *never* deduced
+					<p>(fragment) Now a rule that catches everybody at least once: template arguments are *never* deduced
 					from the return type. Look at `parse`. Writing `int i = parse("42")` does not compile — the compiler
 					does not look at what you are assigning to. Deduction works left to right, from the arguments in.
-					You must write `parse&lt;int&gt;("42")`.
+					You must write `parse&lt;int&gt;("42")`.</p>
 
-					(fragment) And remember this, because it comes back in the second half: some templates can *only*
-					be called with explicit arguments — when a parameter appears nowhere in the function parameter list,
-					there is nothing to deduce it from. That is not a limitation, it is a design tool. Both the
-					variadic `sum_all` in a few slides and the policy-based serializer at the end rely on exactly this.
+					<p>And remember this, because it comes back in the second half: some templates can *only*
+					be called with explicit arguments.</p>
+				</aside>
+			</section>
+
+			<!-- Slide: cv-qualifier deduction -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>How <code>cv qualifiers</code> are deduced</h2>
+				<p>One question decides everything: is the parameter a <b>reference</b> or not?</p>
+				<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
+					<div style="flex: 1;">
+						<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void funcValue(T a);
+
+template&lt;typename T&gt;
+void funcRefParam(T&amp; a);</code></pre>
+					</div>
+					<div style="flex: 1;">
+						<pre data-mark-target="cv-qual-deduct"><code class="language-cpp" data-line-numbers>int x = 5;
+const int cx = 5;
+
+funcValue(x);  // T is deduced as int
+funcValue(cx); // T is deduced as int (const is dropped)
+
+funcRefParam(x);  // T is deduced as int
+funcRefParam(cx); // T is deduced as const int (const is kept)</code></pre>
+					</div>
+				</div>
+				<div class="fragment">
+					<p>⚠️ A <code>const T&amp;</code> parameter drops it again</p>
+					<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void funcConstRefParam(const T&amp; a);
+
+funcConstRefParam(cx); // T is int, but a is still const int&amp;</code></pre>
+				</div>
+				<div class="fragment"
+					style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max-content; max-width: 96%; padding: 28px 30px; box-sizing: border-box; background: rgb(255, 255, 255); border: 3px solid #0039a3; border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18); z-index: 10;">
+					<p style="text-align: center; margin: 0 0 0.4em 0;"><strong>💡 Rule of thumbs 💡</strong></p>
+					<ul>
+						<li>By value &rarr; cv-qualifiers are <b>dropped</b></li>
+						<li>By reference &rarr; cv-qualifiers are <b>preserved</b></li>
+					</ul>
+				</div>
+				<script>
+					window.revealReadyQueue.push(() => {
+						markCode('cv-qual-deduct', 'int', 3);
+						markCode('cv-qual-deduct', 'int', 4);
+						markCode('cv-qual-deduct', 'int', 5);
+						markCode('cv-qual-deduct', 'const int', 2);
+					});
+				</script>
+				<aside class="notes">
+					<p>[0:45 — 13:30]</p>
+					<p>Let's talk about how cv qualifiers are deduced in template argument deduction.</p>
+					<p>On the left handside I'm defining two function templates: one taking its parameter by value, and one taking its parameter by reference. How are the cv qualifier deduced?</p>
+					<p>The answer lies whether the parameter is taken by value or by reference. If it is by value, cv-qualifiers are dropped. If it is by reference, cv-qualifiers are preserved.</p>
+				</aside>
+			</section>
+
+			<!-- Slide: array deduction and decay -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>Arrays and pointers</h2>
+				<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
+					<div style="flex: 1;">
+						<pre><code class="language-cpp" data-line-numbers>template&lt;typename T&gt;
+void funcValue(T arg);
+
+template&lt;typename T&gt;
+void funcRefParam(T&amp; arg);</code></pre>
+					</div>
+					<div style="flex: 1;">
+						<pre data-mark-target="array-deduct"><code class="language-cpp" data-line-numbers>int arr[5];
+int* ptrArr = arr;
+
+// the pointer remains a pointer
+funcValue(ptrArr); // T is deduced as int*
+
+// the reference keeps the int* type
+funcRefParam(ptrArr); // T is deduced as int*. But arg is now int*& (dangerous)
+
+// the array decays to a pointer, the size is lost
+funcValue(arr);    // T is deduced as int*
+
+// the reference keeps the array type
+funcRefParam(arr); // T is deduced as int[5]
+</code></pre>
+					</div>
+				</div>
+				<div class="fragment">
+					<p>💡 A reference parameter can even deduce the size as an NTTP 💡</p>
+					<pre><code class="language-cpp" data-line-numbers>template&lt;typename T, std::size_t N&gt;
+constexpr std::size_t arraySize(T (&amp;)[N]) { return N; }
+
+int arr[5];
+static_assert(arraySize(arr) == 5);</code></pre>
+				</div>
+				<script>
+					window.revealReadyQueue.push(() => {
+						markCode('array-deduct', 'int*', 2);
+						markCode('array-deduct', 'int*', 6);
+						markCode('array-deduct', 'int*', 4);
+						markCode('array-deduct', 'int[5]');
+					});
+				</script>
+				<aside class="notes">
+					<p>[1:10 — 14:40]</p>
+					<p>Let's see now how template argument deduction works with arrays and pointers.</p>
+					<p>Again we are using the same example function that takes its parameter either by value or by reference.</p>
+					<p>On the right side we are defining an array and a pointer to it, and then observing how the template argument deduction behaves for each case.</p>
+					<p>let's start first with the pointer</p>
+					<p>Whenever we pass the pointer by value, it remains a pointer. If we pass it by reference, the reference keeps the pointer type.</p>
+					<p>If we pass the array by value, it decays to a pointer and the size information is lost. If we pass it by reference, the array type is preserved and the size remain.</p>
+					<p>The fact that the size remain is very beneficial because we can for instance deduce the size as an NTTP</p>
+
+				</aside>
+			</section>
+
+			<!-- Slide: reference parameters deduce pointer types -->
+			<section data-auto-animate>
+				<h1>Template argument deduction</h1>
+				<h2>⚠️ Why <code>T&amp;</code> is dangerous with pointers ⚠️</h2>
+				<p>A reference parameter will happily deduce <code>T</code> as a <b>pointer</b> type.</p>
+				<pre data-mark-target="ptr-deduct"><code class="language-cpp" data-line-numbers="|1-5|7-13">template&lt;typename T&gt;
+void dangerous(T&amp; value) {
+	// ... some logic
+	++value;
+}
+
+int retries = 0;
+int* retriesPtr = &amp;retries;
+
+// 😱 Forgot the '*' 😱
+dangerous(retriesPtr); // T is int*, so value is int*&amp;
+// retriesPtr is now pointing to an invalid memory address
+printf("%d\n", *retriesPtr);   // 💥 disaster 💥</code></pre>
+				<p class="fragment">The <b>pointer</b> is incremented, not the value </p>
+				<ul>
+					<li class="fragment">⚠️ Think twice before using a non-const reference parameter</li>
+					<li class="fragment">💡 Validate the deduced type with <code>static_assert</code> and
+						<mark>&lt;type_traits&gt;</mark>, e.g. <code>std::is_pointer_v</code>,
+						<code>std::is_const_v</code>
+					</li>
+					<li class="fragment">💡 From C++20, use concepts</li>
+				</ul>
+				<script>
+					window.revealReadyQueue.push(() => {
+						setTimeout(() => highlightMarkedCode('ptr-deduct', [
+							['int*', 2],
+							['int*&', 1],
+						]), 100);
+					});
+				</script>
+				<aside class="notes">
+					<p>[1:10 — 15:50]</p>
+					<p>Let's now talk about the danger of reference parameters deducing pointer types.</p>
+					<p>In this example, we have a function named dangerous that increment its input parameter. Nothing looks wrong, right?</p>
+					<p>Let's now define a pointer to an integer and pass it to the dangerous function. Notice that we actually forgot to dereference the pointer.</p>
+					<p>This will have the nasty effect that the pointer itself is incremented, not the value it points to, leading to an invalid memory access. There will not be any compiler error to save you from this</p>
+					<p>So think twice before using a non-const reference parameter. Since we don't know what will be passed to us, it can lead to unexpected and dangerous behavior.</p>
 				</aside>
 			</section>
 
@@ -926,34 +931,19 @@ T myMax(T a, T b) {
 				<pre><code class="language-cpp">myMax("hello", "world");</code></pre>
 				<p>🙋‍♂️🙋‍♀️</p>
 				<div class="fragment">
+					<p>We don't know the result 🤷‍♂️. Pointer comparison</p>
 					<p>The instantiated function is</p>
 					<pre><code class="language-cpp" data-line-numbers>const char* myMax(const char* a, const char* b) {
 	return a &gt; b ? a : b;
 }</code></pre>
-					<p>We don't know the result 🤷. Pointer comparison</p>
+					
 				</div>
 				<aside class="notes">
-					[1:30 — cumulative 21:00]
-
-					Deduction is mechanical, and sometimes the mechanics surprise you. My favourite example.
-
-					Same `myMax`. What does `myMax("hello", "world")` return?
-
-					[Wait. You will hear "world", because w comes after h alphabetically. That is the trap.]
-
-					(fragment) The string literals decay to `const char*`, so `T` is deduced as `const char*`, and the
-					instantiated function compares two *pointers*.
-
-					We do not know the result. It depends on where the linker happened to put the two string literals
-					in the binary. It might be "world", it might be "hello", it might change when you add an unrelated
-					file to the project. Comparing unrelated pointers with `&gt;` is not even well-defined in the
-					standard.
-
-					And here is the really nasty part: it *compiles*. No warning. The implicit requirement — `T` must
-					have `operator&gt;` — is satisfied by pointers. Satisfied, but meaningless.
-
-					So: implicit requirements tell you what the compiler can check. They cannot tell you whether the
-					operation *means* the right thing. That is still your job.
+					<p>[0:40 — 16:30]</p>
+					<p>Let's now come back on the myMax example and see what is happening with string literals.</p>
+					<p>Can anyone tell me what the following call will return? 🤔</p>
+					<p>we actually don't know the result</p>
+					<p>The best way to understand this is to see what will be the instantiated function by the compiler. By looking at it we see that a and b a pointer to const char and so we are comparing memory addresses.</p>
 				</aside>
 			</section>
 
@@ -980,27 +970,15 @@ T myMax(T a, T b) {
 				<p>Now <code>myMax("hello", "world")</code> returns the pointer to <code>"world"</code> 👍</p>
 				<p class="fragment">💡 Out of reach for a macro: the pre-processor cannot overload 💡</p>
 				<aside class="notes">
-					[1:00 — cumulative 22:00]
-
-					The fix is beautifully simple: provide a plain, non-template overload for the type you want to treat
-					specially.
-
-					Nine words of C++: a normal function taking two `const char*` and using `strcmp`. Now
-					`myMax("hello", "world")` returns a pointer to "world", every time.
-
-					Why does this work? Overload resolution prefers an exact non-template match over a template
-					instantiation. The compiler sees a perfect fit and takes it. No opt-in, no configuration — you just
-					declare the function and calls start routing to it.
-
-					This is the extensibility pattern of the whole talk in miniature: a generic default, plus a
-					specific override, and the caller's code does not change by a single character.
-
-					(fragment) And note — this is completely out of reach for a macro. The pre-processor has no notion
-					of types, so it cannot overload. One `MAX`, forever.
+					<p>[0:35 — 17:05]</p>
+					<p>However, fixing this problem isn't difficult</p>
+					<p>We just need to provide a non-templated function overload for the specific type. And the compiler is going to pick it.</p>
+					<p>The fact that we can provide an overload is a clear avantages over macros because we have the possibility to customize the implementation for a specific type.</p>
 				</aside>
 			</section>
 
 			<!-- Slide: Why not a template specialization-->
+			<!--
 			<section data-auto-animate>
 				<h1>Function Template Specialization</h1>
 				<h2>Why not an explicit specialization? 🤔</h2>
@@ -1039,6 +1017,16 @@ int main() {
 				<aside class="notes">
 					[1:30 — cumulative 23:30]
 
+					<b>KEY POINTS</b>
+					<ul>
+						<li><b>Explicit specializations do not take part in overload resolution</b></li>
+						<li>Resolution runs first (template vs non-template); only then is a specialization looked up</li>
+						<li>Demo declares both → prints "Call overload". The specialization is never considered</li>
+						<li>Worse: which one wins can depend on declaration order — horrible for a customisation point</li>
+						<li>Herb Sutter GotW #49. Rule: <b>overload function templates, specialize class templates</b></li>
+						<li>Last gotcha — from here it is all building</li>
+					</ul>
+
 					Someone is thinking: "why an overload? C++ has explicit specialization — `template&lt;&gt;` — isn't
 					that the tool for this?" Fair question. Short answer: no.
 
@@ -1061,30 +1049,30 @@ int main() {
 					Moving on — that is the last gotcha. From here it is all building.
 				</aside>
 			</section>
+			-->
 
 			<!-- Slide: Generic programming overview -->
 			<section class="slide-generic-programming" data-auto-animate>
 				<div class="slide-fit">
 					<h1>Putting templates to work</h1>
 					<h2>Generic programming</h2>
-					<div style="display: flex; gap: 40px; justify-content: space-between;">
-						<div style="flex: 1;">
-							<p>Iterate over any kind of iterables</p>
-							<pre><code class="language-cpp" data-line-numbers>template&lt;typename Iterable&gt;
+					<p>Iterate over any kind of iterables</p>
+					<pre><code class="language-cpp" data-line-numbers>template&lt;typename Iterable&gt;
 void print(Iterable&amp; c) {
 	for (const auto&amp; element : c) {
 		std::cout &lt;&lt; element &lt;&lt; "\n";
 	}
 }</code></pre>
-						</div>
-						<div style="flex: 1;">
-							<div class="fragment">
-								<p>Works with</p>
+					<p class="fragment" data-fragment-index="0">Works with</p>
+					<div class="r-stack top-aligned">
+						<div class="fragment fade-in-then-out" data-fragment-index="0">
+						<div style="display: flex; gap: 40px; justify-content: space-between;">
+							<div style="flex: 1;">
 								<p>Any standard containers (vector, list, set, map, ...) </p>
 								<pre><code class="language-cpp" data-line-numbers>std::vector&lt;int&gt; v = {1, 2, 3};
 print(v);</code></pre>
 							</div>
-							<div class="fragment">
+							<div style="flex: 1;">
 								<p>C++ 20's span and ranges</p>
 								<pre><code class="language-cpp" data-line-numbers>std::span&lt;int&gt; s = {v};
 print(s);
@@ -1094,56 +1082,38 @@ auto even = v | std::views::filter([](int n) { return n % 2 == 0; });
 
 print(even);</code></pre>
 							</div>
-							<div class="fragment">
+							<div style="flex: 1;">
 								<p>C-style arrays</p>
 								<pre><code class="language-cpp" data-line-numbers>int arr[] = {1, 2, 3};
-print(arr);</code></pre>
+						print(arr);</code></pre>
 							</div>
-							<div class="fragment">
-								<p>Custom types: just add an overload</p>
-								<pre><code class="language-cpp" data-line-numbers>struct Graph { ... };
+						</div>
+						</div>
+						<div class="fragment">
+							<p>Custom types</p>
+							<pre><code class="language-cpp" data-line-numbers>struct Graph { ... };
+// Make Graph printable by adding an overload for print
 void print(Graph&amp; g) { ... }
 
 Graph g;
 print(g); // 👍</code></pre>
-							</div>
+							<p>Extensible without ever touching <code>print</code> 👍</p>
 						</div>
 					</div>
-					<p class="fragment">Extensible without ever touching <code>print</code> 👍</p>
 				</div>
 				<aside class="notes">
-					[1:30 — cumulative 25:00]
-
-					Now let's put this to work. First payoff: generic programming.
-
-					Six lines: `print`, taking anything called `Iterable`, with a range-for inside. The implicit
-					requirements are exactly two: the type must support `begin`/`end`, and its elements must be
-					streamable.
-
-					That is a tiny contract. Look at what satisfies it.
-
-					(fragment) Every standard container — vector, list, set, map, deque, array. One function.
-
-					(fragment) C++20 `span` — which did not exist when you wrote `print`. And ranges: a filtered view
-					is a lazily-evaluated pipeline, nothing like a vector in memory, and `print` does not care. It has
-					`begin` and `end`. Done.
-
-					(fragment) Even C-style arrays work — range-for handles raw arrays.
-
-					(fragment) And your own types. Either give your `Graph` begin/end and it satisfies the existing
-					contract, or drop in an overload as we just saw.
-
-					The headline: you extend this without ever touching `print`. No base class to inherit, no interface
-					to implement, no registration. Contrast with a runtime-polymorphic design where every type must
-					derive from your `Printable` base — which you cannot do for `std::vector`, and cannot do for types
-					from a third-party library. Templates are *non-intrusive*. That is their superpower.
+					<p>[0:50 — 17:55]</p>
+					<p>Let's now write a generic function.
+					This print function is very powerful because it can handle any iterable supporting range based for loops. Thus allowing generic programming.
+					It works with a vector, a std::span, a view, and even with a C-style array.</p>
+					<p>This function is also extensible because we can easily add support to a new type which doesn't support range based for loop to make it printable by simply adding an overload for the `print` function.</p>
 				</aside>
 			</section>
 
 			<!-- Slide: Generic programming polymorphism (Bjarne) -->
 			<section data-auto-animate>
 				<h1>Putting templates to work</h1>
-				<h2>Static polymorphism</h2>
+				<h2>"Polymorphism" without inheritance</h2>
 				<p>Polymorphic behaviour between unrelated types</p>
 				<pre><code class="language-cpp" data-line-numbers="|1-2|4-10|12-19">template&lt;typename T&gt;
 constexpr int legs(T&amp; ll) { return ll.legs(); }
@@ -1165,37 +1135,17 @@ int main()
 	static_assert(legs(c) == 4);
 	static_assert(legs(d) == 2);
 }</code></pre>
-				<p class="fragment">💡 Polymorphism without inheritance &mdash; the only contract is
-					<code>.legs()</code> 💡</p>
 				<p><small>Example from Bjarne Stroustrup <small>(apologies for the artificial example)</small></small>
 				</p>
 				<aside class="notes">
-					[1:30 — cumulative 26:30]
-
-					Second payoff, and it is the one that changes how you design: static polymorphism.
-
-					This example is Bjarne's — and yes, it is artificial, apologies. It makes the point in twenty lines.
-
-					(line 1-2) `legs` is a template calling `.legs()` on whatever you hand it. Note `constexpr`.
-
-					(lines 4-10) `Cow` and `Duck`. Read the comments: neither is in any class hierarchy. No common
-					base. They do not know about each other, and neither knows about `legs`. They are completely
-					unrelated types.
-
-					(lines 12-19) And yet `legs(c)` gives 4 and `legs(d)` gives 2 — polymorphic behaviour. That is
-					polymorphism by definition: same call, different behaviour depending on type.
-
-					Look at *how* it is checked though — `static_assert`. This is all resolved at compile time. There is
-					no vtable, no vptr in `Cow`, no indirect call, nothing to devirtualize. `sizeof(Cow)` is 1. In the
-					final binary these calls are literally the constants 4 and 2.
-
-					(fragment) So: polymorphism without inheritance. The only contract is "has a member function
-					`legs()`" — an implicit requirement again.
-
-					When should you choose this over virtual functions? When the set of types is known at compile time.
-					If you need a heterogeneous container or a plugin loaded at run time, you still want virtual —
-					templates are not a replacement for everything. But in embedded and performance-critical code, the
-					set usually *is* known at compile time, and then you are paying for dynamic dispatch you never use.
+					<p>[1:10 — 19:05]</p>
+					<p>Our second example is that templates can enable a sort of polymorphic behavior without requiring inheritance.
+					It is an example that I read from a post of Bjane Stroustrup. But when I asked him the permission to use it, he said I need to mention his apology for this example because of the artificial nature of the example.</p>
+					<p>In practice, we create a function which calls a member function on any type that provides it, without requiring a common base class. This is an implicit requirement.</p>
+					<p>Now let's come back on the example.</p>
+					<p>We define a templated function <code>legs</code> that calls the <code>legs</code> member function on any type that provides it. This is the implicit requirements.</p>
+					<p>Now let's define 2 structs which implement the implicit requirements.</p>
+					<p>Finally we can see that the templated legs function calls the correct legs member function. The resolution happened at compile time.</p>
 				</aside>
 			</section>
 
@@ -1203,82 +1153,118 @@ int main()
 			<section data-auto-animate>
 				<h1>Variadic templates</h1>
 				<h2>A variable number of template parameters</h2>
-				<p>The ellipsis (<code>...</code>) says which parameter is a <b>pack</b>, and where it expands.</p>
+				<p class="fragment">The ellipsis (<code>...</code>) says which parameter is a <b>pack</b>, and where it expands.</p>
 				<div class="fragment">
-					<pre data-mark-target="sum_all"><code class="language-cpp" data-line-numbers>template&lt;typename T, typename... Ts&gt;
-int sum_all(Ts... args)
-{
+					<pre data-mark-target="sum_all"><code class="language-cpp" data-line-numbers>template&lt;typename T, typename ...Ts&gt;
+T sum_all(Ts... args) {
     std::array&lt;T, sizeof...(Ts)&gt; arr = { args... }; // pack expansion fills the array
     return std::accumulate(arr.begin(), arr.end(), 0);
 }</code></pre>
 				</div>
 				<div class="fragment">
-					<pre><code class="language-cpp" data-line-numbers>auto total = sum_all&lt;int&gt;(1, 2, 3, 4); // total == 10</code></pre>
+					<pre><code class="language-cpp" data-line-numbers>// Any number of arguments can be given to sum_all
+auto total = sum_all&lt;int&gt;(1, 2); // total == 3</code></pre>
+					<p>💡 <code>T</code> doesn't appears in any function parameter &rarr; it can only be given explicitly 💡</p>
 				</div>
-				<p class="fragment">ℹ️ <code>sizeof...(Ts)</code> gives the number of elements in the pack</p>
-				<p class="fragment">💡 <code>T</code> appears in no function parameter &rarr; it can only be given
-					explicitly 💡</p>
 				<script>
 					window.revealReadyQueue.push(() => {
 						setTimeout(() => highlightMarkedCode('sum_all', [
-							['...', 1],
-							['...', 2],
-							['...', 4],
-							['sizeof...(Ts)', 1],
+							['T', 1, 'lightcoral'],
+							['T', 3, 'lightcoral'],
+							['T', 5, 'lightcoral'],
+							['...Ts', 1],
+							['Ts...', 1, 'lightblue'],
+							['sizeof...(Ts)', 1, 'lightgreen'],
+							['args...', 1, 'mediumpurple'],
 						]), 100);
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 28:00]
-
-					So far every template took a fixed number of parameters. Variadic templates lift that: a variable
-					number.
-
-					The whole feature is one token: the ellipsis, three dots. It has exactly two jobs, and once you see
-					them you can read any variadic code.
-
-					Job one — to the *left* of a name, in a declaration: "this is a pack". `typename... Ts` declares a
-					pack of types. `Ts... args` declares a pack of function arguments.
-
-					Job two — to the *right* of an expression: "expand the pack here". `args...` in the braced
-					initialiser becomes `arg0, arg1, arg2, arg3`.
-
-					Declare on the left, expand on the right. That is genuinely the whole rule.
-
-					(fragment) So `sum_all&lt;int&gt;(1, 2, 3, 4)` fills a four-element array and accumulates it — ten.
-
-					(fragment) `sizeof...(Ts)` — with the dots — gives the *number* of elements in the pack. It is a
-					compile-time constant, which is why it can be the array size.
-
-					(fragment) And notice: `T` appears nowhere in the function parameters, so there is nothing to deduce
-					it from. Remember the rule from earlier — that is why you must write `sum_all&lt;int&gt;`
-					explicitly. Deliberate design: the caller picks the accumulator type.
+					<p>[1:45 — 20:50]</p>
+					<p>So far every template took a fixed number of parameters. Variadic templates lift that to a variable number.</p>
+					<p>The whole feature is one token: the ellipsis, three dots. It has exactly two jobs, and once you see them you can read any variadic code.</p>
+					<p>But before we dive into the detail, let's have a look at our next example.</p>
+					<p>The responsibility of the sum_all function will be to sum all the arguments passed to it. This function takes 2 template parameters: the type of the accumulator (`T`) and a variadic pack of argument types (`Ts...`).</p>
+					<p>Now let's talk about the job of the ellipsis.
+					Job one — to the *left* of a name, in a declaration: "this is a pack". `typename ...Ts` declares a
+					pack of types. `Ts... args` declares a pack of function arguments.</p>
+					<p>Job two — to the *right* of an expression: "expand the pack here".
+					We see it expanded in the function arguments as well as in the initialization of the std::array.</p>
+					<p>Declare on the left, expand on the right. That is genuinely the whole rule.</p>
+					<p>Regarding its call, we need to explicitly specify what T is. That's because T isn't part of the function parameters and so it must be given explicitly.</p>
 				</aside>
 			</section>
 
 			<!-- Slide: Variadic sum_all under the hood -->
 			<section data-auto-animate>
 				<h1>Variadic templates</h1>
-				<h2>sum_all under the hood</h2>
+				<h2>sum_all under the hood 🔎</h2>
 				<p>What the pack expansion really generates</p>
-				<img src="images/sum_all.png" alt="Generated code for sum_all" style="height: 70vh;">
-				<p><a href="https://cppinsights.io/s/5d262841">https://cppinsights.io/s/5d262841</a></p>
+				<div class="cppi-window">
+					<div class="cppi-titlebar">
+						<span class="cppi-dot red"></span>
+						<span class="cppi-dot yellow"></span>
+						<span class="cppi-dot green"></span>
+						<span class="cppi-url">cppinsights.io/s/b7e622a8</span>
+					</div>
+					<div class="cppi-panes">
+						<div class="cppi-pane">
+							<p class="cppi-pane-label">Source:</p>
+							<pre data-mark-target="cppi-sumall-src"><code class="language-cpp" data-line-numbers>template&lt;typename T, typename ...Ts&gt;
+T sum_all(Ts... args) {
+	std::array&lt;T, sizeof...(Ts)&gt; arr = {args...};
+	return std::accumulate(arr.begin(), arr.end(), 0);
+}
+
+auto total = sum_all&lt;int&gt;(1, 2);</code></pre>
+						</div>
+						<div class="cppi-pane">
+							<p class="cppi-pane-label">Insight:</p>
+							<pre data-mark-target="cppi-sumall-insight"><code class="language-cpp" data-line-numbers>template&lt;&gt;
+int sum_all&lt;int, int, int&gt;(int __args0, int __args1) {
+	std::array&lt;int, 2&gt; arr = {{__args0, __args1}};
+	return std::accumulate(arr.begin(), arr.end(), 0);
+}
+
+auto total = sum_all&lt;int&gt;(1, 2);</code></pre>
+						</div>
+					</div>
+				</div>
+				<p><a href="https://cppinsights.io/s/b7e622a8">https://cppinsights.io/s/b7e622a8</a></p>
+				<p class="fragment">⚠️ If sum_all is called with 3 arguments a new version is generated</p>
+				<script>
+					window.revealReadyQueue.push(() => {
+						setTimeout(() => {
+							highlightMarkedCode('cppi-sumall-src', [
+								['T', 1, 'lightcoral'],
+								['T', 3, 'lightcoral'],
+								['T', 5, 'lightcoral'],
+								['...Ts', 1],
+								['Ts...', 1, 'lightblue'],
+								['args...', 1, 'mediumpurple'],
+								['sizeof...(Ts)', 1, 'lightgreen'],
+							]);
+							highlightMarkedCode('cppi-sumall-insight', [
+								['int', 1, 'lightcoral'],
+								['int', 2, 'lightcoral'],
+								['int', 7, 'lightcoral'],
+								['int, int', 2],
+								['int __args0, int __args1', 1, 'lightblue'],
+								['2', 1, 'lightgreen'],
+								['{__args0, __args1}', 1, 'mediumpurple']
+							]);
+						}, 100);
+					});
+				</script>
 				<aside class="notes">
-					[1:00 — cumulative 29:00]
-
-					Back to C++ Insights, because "pack expansion" sounds magical until you see it.
-
-					There is no magic. The compiler generated a completely ordinary function taking four `int`s by
-					value, and the pack expansion became a plain braced initialiser list: `{arg1, arg2, arg3, arg4}`.
-					The dots are gone. It is code you could have written by hand.
-
-					That is the mental model I want you to keep for the rest of the talk: a pack expansion is
-					compile-time copy-paste, done by the compiler, with full type checking. Whenever you see `...` and
-					feel lost, ask "what does this look like for exactly three arguments?" and write it out. It always
-					works.
-
-					And call it out: if I pass five arguments instead of four, a *second* function is generated. Same
-					trade-off as before — one instantiation per distinct argument list.
+					<p>[1:00 — 21:50]</p>
+					<p>Back to C++ Insights, because "pack expansion" sounds magical until you see it.</p>
+					<p>There is no magic. The compiler generated a completely ordinary function taking two `int`s by
+					value, and the pack expansion became a plain braced initialiser list: `{arg1, arg2}`.
+					The dots are gone. It is code you could have written by hand.</p>
+					<p>That is the mental model I want you to keep for the rest of the talk: a pack expansion is compile-time copy-paste, done by the compiler, with full type checking.</p>
+					<p>And call it out: if I pass five arguments instead of four, a *second* function is generated. Same
+					trade-off as before — one instantiation per distinct argument list. But the optimizer helps.</p>
 				</aside>
 			</section>
 
@@ -1286,73 +1272,113 @@ int sum_all(Ts... args)
 			<section data-auto-animate>
 				<h1>Variadic templates</h1>
 				<h2 data-id="cpp17fold">C++17's fold expressions</h2>
+				<p>Syntax</p>
+				<pre data-mark-target="foldSyntax"><code>(pattern op ...);</code></pre>
 				<p>A fold repeats one expression for each element of the pack.</p>
-				<pre data-mark-target="variadicFold"><code class="language-cpp" data-line-numbers>template&lt;typename... Args&gt;
+				<pre data-mark-target="variadicFold"><code class="language-cpp" data-line-numbers>template&lt;typename ...Args&gt;
 void print(Args... args) {
-	((std::cout &lt;&lt; args &lt;&lt; " "), ...);
+	((std::cout &lt;&lt; args &lt;&lt; " ") , ...);
 }</code></pre>
 				<div class="fragment">
 					<p>Calling <code class="language-cpp">print(1, 2.5, "hello")</code> prints <code>1 2.5 hello</code>
 					</p>
 				</div>
-				<p class="fragment">💡 Before C++17 you peeled the pack off one argument at a time, with a recursive
-					overload and a non-template base case 💡</p>
+				<p class="fragment">ℹ️ Before C++17 you peeled the pack off one argument at a time, with a recursive overload and a non-template base case</p>
 				<script>
 					window.revealReadyQueue.push(() => {
+						setTimeout(() => highlightMarkedCode('foldSyntax', [
+							['pattern', 1],
+							['op', 1, 'lightgreen']
+						]), 200);
 						setTimeout(() => highlightMarkedCode('variadicFold', [
-							['...', 1],
-							['...', 2],
-							['...', 3],
+							['(std::cout << args << " ")', 1],
+							[',', 1, 'lightgreen']
 						]), 100);
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 30:30]
-
-					Packing into an array works, but usually you want to *do something* with each element. C++17 gave
-					us fold expressions, and they are the single best quality-of-life improvement in this area.
-
-					A fold repeats one expression for each element of the pack. Look at the body: an expression, a
-					comma, and the dots, all wrapped in parentheses — the parentheses are mandatory.
-
-					I am using the comma operator here, which is the "just do this for each element" fold. Read it as:
-					stream out `args`, then a space; repeat for every element.
-
-					(fragment) `print(1, 2.5, "hello")` prints `1 2.5 hello`. Three different types, one function, no
-					recursion.
-
-					Other operators fold too — `(args + ...)` sums, `(args &amp;&amp; ...)` ANDs. We will use the
-					`&amp;&amp;` fold at the very end of the talk to type-check hardware register fields at compile
-					time, so keep it in mind.
-
-					(fragment) And a word for anyone maintaining pre-C++17 code: you used to write this as a recursive
-					template that peeled one argument off the front, plus a non-template base case to stop the
-					recursion. Two functions, awkward to read, and every recursion level was another instantiation. If
-					you have that pattern in your codebase, folds are a very satisfying refactor.
+					<p>[1:00 — 22:50]</p>
+					<p>Packing into an array works, but usually you want to *do something* with each element. C++17 gave us fold expressions.</p>
+					<p>The syntax works as follows. In between mandatory parentheses, we place the pattern we want to repeat followed by an operator followed by the ellipsis.</p>
+					<p>A fold repeats one expression for each element of the pack.</p>
+					<p>I am using the comma operator here, which is the "just do this for each element" fold. Read it as:
+					stream out `args`, then a space; repeat for every element.</p>
+					<p>(fragment) `print(1, 2.5, "hello")` prints `1 2.5 hello`. Three different types, one function, no
+					recursion.</p>
+					<p>Before C++17, the technique consists of using recursion.</p>
 				</aside>
 			</section>
 
 			<!-- Slide: Variadic templates fold expression under the hood -->
 			<section data-auto-animate>
 				<h1>Variadic templates</h1>
-				<h2 data-id="cpp17fold">Under the hood: one call per pack element</h2>
-				<img src="images/variadicFold.png" alt="Variadic print"
-					style="width: 72%; max-width: 72%; max-height: 70vh; object-fit: contain; display: block; margin: 0 auto 0.35em auto;">
+				<h2 data-id="cpp17fold">Under the hood: one call per pack element 🔎</h2>
+				<div class="cppi-window">
+					<div class="cppi-titlebar">
+						<span class="cppi-dot red"></span>
+						<span class="cppi-dot yellow"></span>
+						<span class="cppi-dot green"></span>
+						<span class="cppi-url">cppinsights.io/s/16760da2</span>
+					</div>
+					<div class="cppi-panes">
+						<div class="cppi-pane">
+							<p class="cppi-pane-label">Source:</p>
+							<pre data-mark-target="cppi-fold-src"><code class="language-cpp" data-line-numbers>template&lt;typename ...Args&gt;
+void print(Args... args)
+{
+	((std::cout &lt;&lt; args &lt;&lt; " ") , ...);
+}
+
+print(1, 2.5, "hello");</code></pre>
+						</div>
+						<div class="cppi-pane">
+							<p class="cppi-pane-label">Insight:</p>
+							<pre data-mark-target="cppi-fold-insight"><code class="language-cpp" data-line-numbers>template&lt;&gt;
+void print&lt;int, double, const char *&gt;(int __args0,
+                                       double __args1,
+                                       const char * __args2)
+{
+	(std::cout &lt;&lt; __args0 &lt;&lt; " "),
+	(std::cout &lt;&lt; __args1 &lt;&lt; " "),
+	(std::cout &lt;&lt; __args2 &lt;&lt; " ");
+}
+
+print(1, 2.5, "hello");</code></pre>
+						</div>
+					</div>
+				</div>
 				<p><a href="https://cppinsights.io/s/16760da2">https://cppinsights.io/s/16760da2</a></p>
+				<script>
+					window.revealReadyQueue.push(() => {
+						setTimeout(() => {
+							highlightMarkedCode('cppi-fold-src', [
+								['...Args', 1],
+								['Args...', 1, 'lightblue'],
+								['(std::cout << args << " ") , ...', 1, 'mediumpurple']
+							]);
+							highlightMarkedCode('cppi-fold-insight', [
+								['int, double, const char *', 1],
+								['int __args0,', 1, 'lightblue'],
+								['double __args1,', 1, 'lightblue'],
+								['const char * __args2', 1, 'lightblue'],
+								['(std::cout << __args0 << " "),', 1, 'mediumpurple'],
+								['(std::cout << __args1 << " "),', 1, 'mediumpurple'],
+								['(std::cout << __args2 << " ")', 1, 'mediumpurple']
+							]);
+						}, 100);
+					});
+				</script>
 				<p><a
 						href="https://en.cppreference.com/cpp/language/fold">https://en.cppreference.com/cpp/language/fold</a>
 				</p>
 				<aside class="notes">
-					[0:30 — cumulative 31:00]
-
-					One more look under the hood, quickly — same lesson, so don't linger.
-
-					The fold expanded into three separate, ordinary stream calls, one per pack element, each with the
+					<p>[0:35 — 23:25]</p>
+					<p>One more look under the hood, quickly — same lesson, so don't linger.</p>
+					<p>The fold expanded into three separate, ordinary stream calls, one per pack element, each with the
 					correct type already resolved. No loop, no recursion, no run-time dispatch. Straight-line code the
-					optimiser can chew through.
-
-					The cppreference link at the bottom lists all four fold forms — unary/binary, left/right. Bookmark
-					it; nobody remembers which is which, including me.
+					optimiser can chew through.</p>
+					<p>The cppreference link at the bottom lists all four fold forms — unary/binary, left/right. Bookmark
+					it; nobody remembers which is which, including me.</p>
 				</aside>
 			</section>
 
@@ -1367,7 +1393,7 @@ void relay(Args&amp;&amp; args) {
 }</code></pre>
 				<div class="fragment">
 					<h3>Textbook example: <code>std::vector::emplace_back</code></h3>
-					<pre><code class="language-cpp" data-line-numbers>template&lt;typename... Args&gt;
+					<pre><code class="language-cpp" data-line-numbers>template&lt;typename ...Args&gt;
 reference emplace_back(Args&amp;&amp;... args);</code></pre>
 					<div style="display: flex; gap: 36px; justify-content: space-between; align-items: flex-start;">
 						<div style="flex: 1;">
@@ -1375,7 +1401,7 @@ reference emplace_back(Args&amp;&amp;... args);</code></pre>
 							<pre data-mark-target="pushBack-call"><code class="language-cpp">users.push_back(User{2, "Bob"});</code></pre>
 						</div>
 						<div style="flex: 1;">
-							<p><code>emplace_back</code> constructs in place</p>
+							<p><code>emplace_back</code> calls the constructor in place</p>
 							<pre data-mark-target="emplaceBack-call"><code class="language-cpp">users.emplace_back(2, "Bob");</code></pre>
 						</div>
 					</div>
@@ -1389,33 +1415,20 @@ reference emplace_back(Args&amp;&amp;... args);</code></pre>
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 32:30]
-
-					One more building block and then we build things. Perfect forwarding.
-
-					The problem: you have a wrapper that takes arguments and passes them to another function. If you do
-					it naively you lose information — specifically the *value category*. A temporary that arrived as an
-					rvalue, ready to be moved from, becomes a named lvalue inside your function and gets copied instead.
-					You silently turned a move into a copy.
-
-					`std::forward` fixes that. Take the parameter as `T&amp;&amp;` where `T` is deduced, and forward it.
+					<p>[1:45 — 25:10]</p>
+					<p>One more building block we need to go over is perfect forwarding.</p>
+					<p>The problem: you have a wrapper that takes arguments and passes them to another function. If you do it naively you lose information — specifically the *value category*. A temporary that arrived as an rvalue, ready to be moved from, becomes a named lvalue inside your function and gets copied instead.
+					You silently turned a move into a copy.</p>
+					<p>`std::forward` fixes that. Take the parameter as `T&amp;&amp;` where `T` is deduced, and forward it.
 					If the caller passed an lvalue, `consume` sees an lvalue; if an rvalue, `consume` sees an rvalue.
-					Perfectly preserved — hence the name.
-
-					(fragment) The textbook example is `emplace_back`. Its signature is a variadic pack of forwarding
-					references — everything we have just learned, in one line.
-
-					Compare the two calls. `push_back(User{2, "Bob"})` constructs a temporary `User`, then moves it into
-					the vector, then destroys the temporary. `emplace_back(2, "Bob")` forwards the raw arguments all the
+					Perfectly preserved — hence the name.</p>
+					<p>(fragment) The textbook example is `emplace_back`. Its signature is a variadic pack of forwarding references.</p>
+					<p>Compare the two calls. `push_back(User{2, "Bob"})` constructs a temporary `User`, then moves it into the vector, then destroys the temporary.
+					`emplace_back(2, "Bob")` forwards the raw arguments all the
 					way down and constructs the `User` *directly in the vector's storage*. One object instead of two. No
 					move, no destructor call.
-
-					Godbolt link on the slide shows the difference in the generated code. For a type with a cheap move
-					this barely matters; for anything holding a buffer, it is real.
-
-					And note *why* this is possible: without variadic templates plus forwarding references, you would
-					need one overload per constructor arity. Two simple features combining into something you could not
-					build otherwise.
+					Notice that emplace_back takes the constructor arguments as parameters and not a constructed object like push_back.</p>
+					<p>The godbolt link below shows that in the push_back case, a temporary is created and then moved away while in the emplace_back case, only the constructor is called.</p>
 				</aside>
 			</section>
 
@@ -1436,14 +1449,18 @@ void relay(T&amp;&amp; arg) {
 template&lt;typename T&gt;
 void relay(const T&amp;&amp; arg);          // const rvalue</code></pre>
 				</div>
-				<ul class="fragment">
+
+				<div class="fragment">
+				<p>Two more traps:</p>
+				<ul>
 					<li>⚠️ Using <code>arg</code> again after forwarding it &rarr; moved-from bug</li>
 					<li>⚠️ <code>std::move</code> instead of <code>std::forward</code> &rarr; moves lvalues
 						unconditionally</li>
 				</ul>
-				<p class="fragment"><small>Forwarding references are also called <b>universal references</b>: <a
+				</div>
+				<p class="fragment">Forwarding references are also called <b>universal references</b>: <a
 							href="https://isocpp.org/blog/2012/11/universal-references-in-c11-scott-meyers">Scott
-							Meyers</a></small></p>
+							Meyers</a></p>
 				<script>
 					window.revealReadyQueue.push(() => {
 						markCode('forwardingReference', '<typename T>', 1);
@@ -1451,30 +1468,25 @@ void relay(const T&amp;&amp; arg);          // const rvalue</code></pre>
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 34:00]
-
-					Here is the catch, and it is the number one mistake people make with forwarding.
-
-					`std::forward` only does its job on a genuine *forwarding reference*. And a forwarding reference is
+					<p>[1:55 — 27:05]</p>
+					<p>Here is the catch.</p>
+					<p>`std::forward` only does its job on a genuine *forwarding reference*. And a forwarding reference is
 					very precisely defined: a `T&amp;&amp;` where `T` is a template parameter deduced *by this very
-					function*. Both halves matter — I have highlighted them.
-
-					(fragment) These are *not* forwarding references, even though they have two ampersands. The first
+					function*. Both halves matter — I have highlighted them.</p>
+					<p>It is very confusing because it looks like a plain rvalue reference, but it is actually a forwarding reference. Just because it is a template parameter.</p>
+					<p>(fragment) These are *not* forwarding references, even though they have two ampersands. The first
 					takes a fixed type — that is a plain rvalue reference; it only binds to rvalues, nothing is deduced.
 					The second is `const T&amp;&amp;` — the `const` disqualifies it. The pattern has to be exactly
-					`T&amp;&amp;`.
-
-					(fragment) Two more traps. One: after you forward an argument, treat it as moved-from. Using it
+					`T&amp;&amp;`.</p>
+					<p>(fragment) Two more traps. One: after you forward an argument, treat it as moved-from. Using it
 					again is a bug — and a quiet one, because a moved-from object is valid, just unspecified. Two: don't
 					reach for `std::move` instead of `std::forward` here. `move` casts unconditionally, so it will steal
 					from a caller's lvalue that they still intend to use. `forward` moves only when the caller gave you
-					an rvalue.
-
-					Rule of thumb: `std::move` on a concrete rvalue reference, `std::forward` on a forwarding reference.
-					Never cross them.
-
-					(fragment) Terminology note: Scott Meyers coined "universal reference" before the standard settled
-					on "forwarding reference". Same thing, you will see both.
+					an rvalue.</p>
+					<p>Rule of thumb: `std::move` on a concrete rvalue reference, `std::forward` on a forwarding reference.
+					Never cross them.</p>
+					<p>(fragment) Terminology note: Scott Meyers coined "universal reference" before the standard settled
+					on "forwarding reference". Same thing, you will see both.</p>
 				</aside>
 			</section>
 
@@ -1494,7 +1506,7 @@ public:
 	bool empty() const { return data.empty(); }
 	std::size_t size() const { return data.size(); }
 
-	template &lt;typename... U&gt;
+	template &lt;typename ...U&gt;
 	void emplace(U&amp;&amp;... args) { data.emplace_back(std::forward&lt;U&gt;(args)...); }
 };
 
@@ -1502,34 +1514,26 @@ Stack&lt;int&gt; intStack;
 Stack&lt;float&gt; floatStack;</code></pre>
 				</div>
 				<p class="fragment"><code>Stack&lt;int&gt;</code> and <code>Stack&lt;float&gt;</code>
-					are different
-					<b><u>types</u></b> generated from the same template.
+					are <b><u>different types</u></b> generated from the same template.
 				</p>
 				<p class="fragment">Because <code>Stack&lt;int&gt;</code> and <code>Stack&lt;float&gt;</code> are types,
 					they can be given as template parameter values</p>
 				<aside class="notes">
-					[1:30 — cumulative 35:30]
-
-					Last building block: class templates. Everything you know about function templates carries over.
-
-					(lines 1-2) `template&lt;typename T&gt;` then `class Stack`. The blueprint.
-
-					(lines 3-4) `T` is usable anywhere inside — here as the element type of the underlying vector.
-
-					(lines 5-12) Ordinary member functions. And note lines 11-12: a member function template *inside* a
-					class template, with its own pack `U`, doing perfect forwarding into `emplace_back`. That is
-					everything from the last four slides combined, and it is the real signature shape you find in the
-					standard library.
-
-					(lines 15-16) Instantiate with `int` and with `float`.
-
-					(fragment) And here is the thing to internalise: `Stack&lt;int&gt;` and `Stack&lt;float&gt;` are
+					<p>[1:40 — 28:45]</p>
+					<p>Last building block: class templates. Everything you know about function templates carries over.</p>
+					<p>We are building a stack abstraction using a vector as an inner data structure.
+					Let's go through the code step by step.</p>
+					<p>(lines 1-2) We tell the compiler we are building a templated class by using the keyword `template&lt;typename T&gt;` before the class definition.</p>
+					<p>(lines 3-4) `T` is usable anywhere inside — here as the element type of the underlying vector.</p>
+					<p>(lines 5-12) Ordinary member functions. T can be used anywhere as well.
+					Notice also the function emplace which uses perfect forwarding to emplace the element in place into the vector.</p>
+					<p>(lines 15-16) Instantiate with `int` and with `float`.</p>
+					<p>(fragment) And here is the thing to internalise: `Stack&lt;int&gt;` and `Stack&lt;float&gt;` are
 					different, unrelated *types*. Not two instances of one type — two types. You cannot assign one to
-					the other. They have no common base class.
-
-					(fragment) And because they are types, they can themselves be used as template arguments. That is
+					the other. They have no common base class.</p>
+					<p>(fragment) And because they are types, they can themselves be used as template arguments. That is
 					how you get `std::vector&lt;std::vector&lt;int&gt;&gt;` — and it is the mechanism behind CRTP, which
-					is two slides away. Types in, types out. Templates compose.
+					is a few slides away. Types in, types out. Templates compose.</p>
 				</aside>
 			</section>
 
@@ -1562,9 +1566,9 @@ class Stack {
 struct Stack {
 	// ... other member functions ...
 
-	template &lt;typename U&gt;
-	void emplace(U&amp;&amp; arg) {
-		consume(std::forward&lt;U&gt;(arg));
+	template &lt;typename ...U&gt;
+	void emplace(U&amp;&amp;... args) {
+		consume(std::forward&lt;U&gt;(args)...);
 	}
 };</code></pre>
 				</div>
@@ -1580,33 +1584,43 @@ struct Stack {
 						]), 100);
 					});</script>
 				<aside class="notes">
-					[1:30 — cumulative 37:00]
-
-					Now that we have class templates, I can show you the forwarding trap in its most common real-world
-					form — because this one I have genuinely shipped.
-
-					Look at `emplace`. It takes `T&amp;&amp;`. There is a `typename T` right above it. It looks exactly
-					like a forwarding reference. It is not.
-
-					Why? Because `T` is deduced at *class* instantiation — when you write `Stack&lt;int&gt;` — not by
+					<p>[1:20 — 30:05]</p>
+					<p>You might wonder why `emplace` is templated and the answer lies in the forwarding reference rules.</p>
+					<p>Look at `emplace`. It takes `T&amp;&amp;`. There is a `typename T` right above it. It looks exactly
+					like a forwarding reference. It is not.</p>
+					<p>Why? Because `T` is deduced at *class* instantiation — when you write `Stack&lt;int&gt;` — not by
 					the member function. By the time anyone calls `emplace`, `T` is already fixed. And the rule says:
-					deduced *by this very function*.
-
-					(fragment) Here is what the compiler actually generates for `Stack&lt;int&gt;`. There it is in black
-					and white: `void emplace(int&amp;&amp;...)`. A plain rvalue reference to `int`. Pass it an lvalue
-					`int` and it does not compile. And `std::forward&lt;int&gt;` is just an unconditional move — you have
-					written `std::move` with extra steps.
-
-					The symptom in the wild is a puzzling compile error: "why does my container reject a perfectly good
-					variable?"
-
-					(fragment — the fix box) The fix is one extra line: give the member function *its own* template
+					deduced *by this very function*.</p>
+					<p>(fragment) To convince ourselves, let's look at what the compiler actually generates for `Stack&lt;int&gt;`. There it is in black
+					and white: `void emplace(int&amp;&amp;...)`. The function only accepts r-value references.
+					The bug is there but your code will compile.</p>
+					<p>(fragment — the fix box) The fix is one extra line: give the member function *its own* template
 					parameter, `U`. Now `U` is deduced at the call, `U&amp;&amp;` is a real forwarding reference, and
-					`std::forward&lt;U&gt;` behaves. Compare this with the `Stack` two slides ago — that one already had
-					it right, with `typename... U`.
+					`std::forward&lt;U&gt;` behaves.</p>
+				</aside>
+			</section>
 
-					So the checklist when you see `T&amp;&amp;`: find where `T` is deduced. Same function — forwarding
-					reference. Anywhere else — plain rvalue reference.
+			<!-- Slide: lazy instantiation of class template member functions -->
+			<section class="slide-lazy-instantiation" data-auto-animate>
+				<h1>Class/struct template</h1>
+				<h2>Function member instantiation</h2>
+				<pre><code class="language-cpp" data-line-numbers>void useStack() {
+	Stack&lt;int&gt; s{};
+	s.emplace(5);
+	std::printf("%d\n", s.top());
+}</code></pre>
+				<p><small><a href="https://godbolt.org/z/n7K1PKdrs">https://godbolt.org/z/n7K1PKdrs</a></small></p>
+				<p>Only the called member functions are instantiated</p>
+				<p class="fragment">⚠️ A member function that would not compile for <code>T</code> stays silent until
+					someone calls it</p>
+				
+				<aside class="notes">
+					<p>[0:40 — 30:45]</p>
+					<p>One more property of class templates, and it surprises people.</p>
+					<p>Looking at the example, we create a stack of int and we call the functions emplace and top.</p>
+					<p>Only the code of the called function is actually instantiated.
+					If you remember the two-phase initialization mechanism, this can hurt you.
+					It can be that your code compiles successfully for a long time, and then suddenly fails when an unused member function is called.</p>
 				</aside>
 			</section>
 
@@ -1614,60 +1628,47 @@ struct Stack {
 			<section data-auto-animate>
 				<h1>Class/struct template</h1>
 				<h2 style="font-size: 1.5em">Curiously Recurring Template Pattern (CRTP)</h2>
-				<p>Since a template argument can be a type, a class
-					can pass <b><u>itself</u></b> as the template argument when deriving from it.</p>
-				<pre data-mark-target="crtp" class="fragment"><code class="language-cpp" data-line-numbers="|1-2|3-5|8-10|12-13">template &lt;typename CHILD&gt;
+				<p>A class can pass <b><u>itself</u></b> as the template argument when deriving from it.</p>
+				<div class="fragment">
+				<p>ℹ️ The base class knows the type <code>CHILD</code> of the class deriving from it</p>
+				<pre data-mark-target="crtp"><code class="language-cpp" data-line-numbers="|1-2|3-5|8-10|12-13">template &lt;typename CHILD&gt;
 struct Base {
 	void greet() {
-		static_cast&lt;CHILD*&gt;(this)-&gt;hello(); // Base knows the derived type
+		static_cast&lt;CHILD*&gt;(this)-&gt;greet_impl(); // Base knows the derived type
 	}
 };
 
-struct Derived : Base&lt;Derived&gt; { // pass yourself as the argument
-	void hello() { std::puts("hello"); }
+struct Derived : public Base&lt;Derived&gt; { // pass yourself as the argument
+	void greet_impl() { std::puts("hello"); }
 };
 
 Derived d;
 d.greet(); // prints "hello", no virtual call</code></pre>
+				</div>
 				<p class="fragment">💡 Static polymorphism, resolved at compile
 					time 💡</p>
-				<p class="fragment">ℹ️ The base class knows the type <code>CHILD</code> of the class deriving from it</p>
 				<script>
 					window.revealReadyQueue.push(() => {
 						setTimeout(() => highlightMarkedCode('crtp', [
-							['Base&lt;Derived&gt;', 1],
-							['Base<Derived>', 1],
+							['Derived', 2],
 						]), 100);
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 38:30]
-
-					It is very important to say that the base class knows the type of the class deriving from it.
-
-					Last pattern before the examples: CRTP — the Curiously Recurring Template Pattern. Terrible name,
-					great pattern. It falls straight out of what we just said: a template argument can be a type, so a
-					class can pass *itself* as the argument to the base it derives from.
-
-					(lines 1-2) `Base` takes a type parameter I have named `CHILD`.
-
-					(lines 3-5) And inside, `Base` casts `this` to `CHILD*` and calls a member function on it. Pause
-					here. The base class is calling into the derived class — and it knows the *exact static type* of the
-					derived class.
-
-					(lines 8-10) The recurring bit: `struct Derived : Base&lt;Derived&gt;`. Derived passes itself.
-					First time you see it, it looks circular and illegal. It is not — at the point of the base-clause
-					the compiler only needs the *name* `Derived`, not its definition.
-
-					(lines 12-13) Call `d.greet()` — prints "hello". No virtual call. No vtable. Nothing to devirtualize
-					because there was never an indirection. The compiler can inline straight through.
-
-					(fragment) This is static polymorphism with an inheritance *shape*: the base provides shared
-					behaviour, the derived class provides the specifics, and it is all resolved at compile time.
-
-					(fragment) Say the key line again: the base class knows the type of the class deriving from it.
+					<p>[1:50 — 32:35]</p>
+					<p>The technique of today is the Curiously Recurring Template Pattern (CRTP).</p>
+					<p>This allows a parent class to know the exact static type of the derived class.</p>
+					<p>Let's look at an example.</p>
+					<p>(lines 1-2) `Base` looks like a normal template class, but it takes a type parameter I have named `CHILD`.</p>
+					<p>(lines 3-5) Because we know that CHILD is the type of the derived class, we can safely cast `this` to `CHILD*` and call member functions on it.</p>
+					<p>(lines 8-10) Now let's define the derived class. It inherits from the base class and passes itself as the template argument.
+					The derived class also implements the `greet_impl` function that the base class will call.</p>
+					<p>(lines 12-13) Let's now create an instance of the Derived class and call the greet function of the base class. Even though we call the base class function, a function of the derived class is invoked.</p>
+					<p>(fragment) This is static polymorphism with an inheritance *shape*: the base provides shared
+					behaviour, the derived class provides the specifics, and it is all resolved at compile time.</p>
+					<p>(fragment) Say the key line again: the base class knows the type of the class deriving from it.
 					That one fact is what makes the third example — the hardware register abstraction — possible. Keep
-					it warm; we use it in about ten minutes.
+					it warm; we use it in about ten minutes.</p>
 				</aside>
 			</section>
 
@@ -1679,58 +1680,36 @@ d.greet(); // prints "hello", no virtual call</code></pre>
 					<p style="font-size: clamp(2.1em, 1.8vw, 1.7em); margin: 0;">🚀🚀🚀🚀🚀🚀🚀</p>
 				</div>
 				<aside class="notes">
-					[0:30 — cumulative 39:00]
-
-					That is the entire toolbox. Let me list it, because it is shorter than you think: function
-					templates, implicit requirements, argument deduction, variadic packs, fold expressions, perfect
-					forwarding, class templates, CRTP. Eight ideas. No SFINAE, no concepts, no metaprogramming.
-
-					Now I want to convince you that those eight ideas are enough to build things that are genuinely
-					useful — not toy examples. Three of them, all from real production code:
-
-					One: a serializer that emits JSON or YAML with zero inheritance. Two: a hardware abstraction layer
-					that decouples bank-swapping policy from register access. Three: type-safe hardware register
-					access that compiles down to the exact same assembly as hand-written bit twiddling.
-
-					Watch for the same few features reappearing in every one. That repetition is the point of the talk.
-
-					[Timing check: you want to be at roughly 39 minutes here. If you are past 43, skip the fragment
-					build-ups on the requirements slides and go straight to the code.]
+					<p>[0:20 — 32:55]</p>
+					<p>We now have all the tools in our toolbox to have a look at our 3 examples so let's get started.</p>
+					<p>The 3 examples will be structured as follows.</p>
 				</aside>
 			</section>
 
-			<!-- Slide: Generic serializer and policy-based design -->
+			<!-- Slide: Generic serializer using a policy-based design -->
 			<section data-auto-animate>
-				<h1>Generic serializer and policy-based design</h1>
+				<h1>Generic serializer using a policy-based design</h1>
 				<ul>
-					<li class="fragment">Design a dump_object function to serialize an object into different formats (e.g., JSON, YAML)</li>
+					<li class="fragment">Design a <code>dump_object</code> function to serialize an object into different formats (e.g., JSON, YAML)</li>
 					<li class="fragment">It should use policy classes (sinks) to determine the output format</li>
 					<li class="fragment">No inheritance required</li>
 					<li class="fragment">Easy to extend with new sinks without modifying the function itself</li>
 				</ul>
 				<aside class="notes">
-					[0:30 — cumulative 39:30]
-
-					Example one: a generic serializer using policy-based design. Go through these fast — it is just the
-					requirements.
-
-					We want a `dump_object` function that serializes an object into different formats — JSON, YAML,
-					maybe a binary protocol later.
-
-					The output format is chosen by a *policy class* — a sink.
-
-					No inheritance. No abstract base `Serializer`, no virtual `write_field`.
-
-					And adding a new format must not require touching `dump_object`.
-
-					If you have written this with an abstract base class before — and most of us have — keep that design
-					in your head for comparison over the next slide.
+					<p>[0:50 — 33:45]</p>
+					<p>Example one: a generic serializer using policy-based design. Go through these fast — it is just the
+					requirements.</p>
+					<p>We want a `dump_object` function that serializes an object into different formats — JSON, YAML,
+					maybe a binary protocol later.</p>
+					<p>The output format is chosen by a *policy class* — a sink.</p>
+					<p>No inheritance. No abstract base `Serializer`, no virtual `write_field`.</p>
+					<p>And adding a new format must not require touching `dump_object`.</p>
 				</aside>
 			</section>
 
-			<!-- Slide: Generic serializer and policy-based design -->
+			<!-- Slide: Generic serializer using a policy-based design -->
 			<section data-auto-animate>
-				<h1>Generic serializer and policy-based design</h1>
+				<h1>Generic serializer using a policy-based design</h1>
 				<pre><code class="language-cpp" data-line-numbers>template &lt;typename Sink&gt;
 void dump_object(const Object&amp; d)
 {
@@ -1796,35 +1775,20 @@ object:
 					</div>
 				</div>
 				<aside class="notes">
-					[1:30 — cumulative 41:00]
-
-					Here is the whole thing. Eight lines at the top.
-
-					`dump_object` takes a `Sink` as a template parameter and calls static functions on it:
+					<p>[1:30 — 35:15]</p>
+					<p>Here is the whole thing. Eight lines at the top.</p>
+					<p>`dump_object` takes a `Sink` as a template parameter and calls static functions on it:
 					`begin_object`, `field`, `end_object`. That is all. `Sink` is a *type*, not an object — there is no
-					parameter, nothing is passed at run time.
-
-					And notice — same rule as before — `Sink` appears in no function parameter, so it must be given
-					explicitly at the call site. Deliberate.
-
-					The implicit requirements are: a static `begin_object`, a static `field` for each value type, a
-					static `end_object`.
-
-					(fragment — JsonSink) Here is a sink that satisfies them, emitting JSON. Plain struct, static
-					members, no base class, no virtual.
-
-					(fragment — YamlSink) And here is YAML. Note `end_object` is *empty* — YAML has no closing brace.
-					With a virtual interface you would still pay for that call. Here it inlines to literally nothing.
-
-					(fragment — main + output) And main: same object, two formats, two lines. The output is on the
-					right. Godbolt link if you want to poke at it.
-
-					Step back and count what we did *not* need. No base class — so a sink can be a third-party type you
-					cannot modify. No virtual — so everything inlines; on `-O2` this compiles to a sequence of `printf`
-					calls with no dispatch at all. No object — no lifetime, no allocation, nothing to pass around.
-
-					And adding a new format is: write a struct with four static functions. `dump_object` never changes.
-					That is the open-closed principle, delivered by a template parameter.
+					parameter, nothing is passed at run time.</p>
+					<p>The implicit requirements are: a static `begin_object`, a static `field` for each value type, a
+					static `end_object`.</p>
+					<p>(fragment — JsonSink) Here is a sink that satisfies them, emitting JSON. Plain struct, static
+					members, no base class, no virtual.</p>
+					<p>(fragment — YamlSink) And here is YAML. Note `end_object` is *empty* — YAML has no closing brace.
+					With a virtual interface you would still pay for that call. Here it inlines to literally nothing.</p>
+					<p>(fragment — main + output) And main: same object, two formats, two lines. The output is on the
+					right. Godbolt link if you want to poke at it.</p>
+					<p>In this case the decision happened at compile time and we didn't need to rely on any vtables.</p>
 				</aside>
 			</section>
 
@@ -1835,29 +1799,23 @@ object:
 				<ul>
 					<li class="fragment">2 set of registers bank exists: Active and Standby</li>
 					<li class="fragment">Driver writes the standby bank using <code>write(...)</code>
-					<ul><li>The parameters to writes must not be fixed</li></ul></li>
+						<ul>
+							<li><code>write</code> takes an unspecified number of parameters</li>
+							<li>In our case it is <code>write(name, value)</code></li>
+						</ul>
+					</li>
 					<li class="fragment">Driver calls <code>commit()</code> to swap the active and standby banks</li>
-					<li class="fragment">Bank-swap policy is decoupled from register access</li>
-					<li class="fragment">The client code is unaware of the active bank</li>
+					<li class="fragment">Bank-swap policy is decoupled from register access logic</li>
+					<li class="fragment">The driver code is unaware of the active bank</li>
 				</ul>
 				<aside class="notes">
-					[1:00 — cumulative 42:00]
-
-					Example two, straight out of embedded work: a register bank manager.
-
-					Quick domain context for the non-embedded folks. A lot of hardware has two sets of configuration
-					registers: an *active* bank the hardware is currently using, and a *standby* bank you can safely
-					write to. When you are happy with the standby values, you commit, and the hardware atomically swaps
-					banks. This is how you reconfigure a peripheral without glitching it mid-operation.
-
-					So the requirements. Two banks exist. The driver writes to the standby bank. The parameters to
-					`write` must *not* be fixed — every peripheral has a different register layout, and I want one
-					manager for all of them. A `commit` swaps the banks.
-
-					And the two design goals: bank-swap policy decoupled from register access — the peripheral driver
-					should not implement the swap logic over and over. And the client code should be unaware of which
-					bank is active. That is the bug this eliminates — in my experience the number one source of
-					"sometimes the config does not apply" bugs is someone writing to the wrong bank index.
+					<p>[1:15 — 36:30]</p>
+					<p>Example two, straight out of embedded work: a register bank manager.</p>
+					<p>When programming the HW, we typically have to deal with active and standby banks of configuration registers. This allows the driver to write to the standby bank without affecting the currently active configuration.</p>
+					<p>We want to design a write function that the driver will use to update the standby bank. The function should be flexible enough to handle different register layouts for various peripherals and thus take an unspecified number of parameters.</p>
+					<p>We also want a commit function that swaps the active and standby banks atomically.</p>
+					<p>The bank-swap policy is decoupled from the register access.</p>
+					<p>And the driver is unaware of which bank is currently active.</p>
 				</aside>
 			</section>
 
@@ -1865,10 +1823,10 @@ object:
 			<section class="slide-register-bank-code" data-auto-animate>
 				<h1>Generic abstraction layer</h1>
 				<h2>Register bank manager</h2>
-				<p>Client code</p>
+				<p>Driver code</p>
 				<pre data-mark-target="activeStandbyClient"><code class="language-cpp" data-line-numbers="|3|5-8|9-11|13|15-18">int main()
 {
-	ActiveStandbyBank&lt;MotorConfigHal&gt; mgr(MotorConfigHal{});
+	ActiveStandbyBank&lt;MotorConfig&gt; mgr(MotorConfig{});
 
 	// Write to the current standby bank i.e bank 0
 	if(!mgr.write("speed_rpm", 1500)) {
@@ -1886,8 +1844,8 @@ object:
 	}
 }</code></pre>
 
-				<p>HAL implementation</p>
-				<pre data-mark-target="motorHal"><code class="language-cpp" data-line-numbers="|1|3-6|8|9-18|20-23">class MotorConfigHal
+				<p>Register access logic implementation</p>
+				<pre data-mark-target="motorHal"><code class="language-cpp" data-line-numbers="|1|3-6|8|9-18|20-23">class MotorConfig
 {
 private:
 	struct Config { uint16_t speed_rpm = 0; 
@@ -1923,33 +1881,25 @@ public:
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 43:30]
-
-					I am showing you the two *ends* first — what the user writes and what the hardware author writes —
-					and the machinery in the middle on the next slide.
-
-					Client code, top. (line 3) Create an `ActiveStandbyBank` wrapping a `MotorConfigHal`. (lines 5-11)
+					<p>[1:50 — 38:20]</p>
+					<p>Let's now have a look at how the driver code interacts with the register bank manager.</p>
+					<p>(line 3) Create an `ActiveStandbyBank` wrapping a `MotorConfig`. (lines 5-11)
 					Write two fields by name. Look at what is *missing*: no bank index anywhere. (line 13) Commit.
 					(lines 15-18) Write again — and this now goes to the other bank, automatically. The client never
-					knew, and cannot get it wrong.
-
-					Also note the return value is propagated — `write` returns a `bool` and we check it. Hold that
-					thought, it matters in a second.
-
-					HAL implementation, bottom. (line 1) A completely plain class. No base class, no virtual, no
-					`#include` of the manager. It does not know `ActiveStandbyBank` exists.
-
-					(lines 3-6) Its own `Config` struct and an array of two banks. (line 8) And here is the contract:
+					knew, and cannot get it wrong.</p>
+					<p>Also note the return value is propagated — `write` returns a `bool` and we check it. Hold that
+					thought, it matters in a second.</p>
+					<p>HAL implementation, bottom. (line 1) A completely plain class. No base class, no virtual, no
+					`#include` of the manager. It does not know `ActiveStandbyBank` exists.</p>
+					<p>(lines 3-6) Its own `Config` struct and an array of two banks. (line 8) And here is the contract:
 					`write` takes a `bank_id` as its *first* parameter, then whatever else this particular peripheral
 					needs — here a field name and a value. (lines 9-18) The body is boring hardware code. (lines 20-23)
-					And `commit` likewise takes a `bank_id` first.
-
-					So the entire implicit requirement is: "provide `write` and `commit` whose first parameter is a bank
+					And `commit` likewise takes a `bank_id` first.</p>
+					<p>So the entire implicit requirement is: "provide `write` and `commit` whose first parameter is a bank
 					id". Everything after that is yours. A different peripheral could take a register offset and a
-					32-bit value, or three arguments, or none.
-
-					That flexibility is exactly what an abstract base class cannot give you — a virtual function has one
-					fixed signature.
+					32-bit value, or three arguments, or none.</p>
+					<p>That flexibility is exactly what an abstract base class cannot give you — a virtual function has one
+					fixed signature.</p>
 				</aside>
 			</section>
 
@@ -1958,74 +1908,56 @@ public:
 				<h1>Generic abstraction layer</h1>
 				<h2>Register bank manager</h2>
 				<p>ActiveStandbyBank implementation</p>
-				<pre data-mark-target="activeStandbyBank"><code class="language-cpp" data-line-numbers="|1-2|4-6|8-9,11-12|14-18|14-15|16-18|20-26">template &lt;typename Hal&gt;
+				<pre data-mark-target="activeStandbyBank"><code class="language-cpp" data-line-numbers="|1-2|4-6|8-9,11-12|14-18|14-15|16-18|20-26">template &lt;typename REGISTER_LOGIC&gt;
 class ActiveStandbyBank
 {
 private:
-	Hal			m_hal;
+	REGISTER_LOGIC m_register_logic{};
 	uint8_t	m_active_id = 0;
 public:
-	explicit ActiveStandbyBank(Hal hal)
-		: m_hal(std::move(hal)){}
+	explicit ActiveStandbyBank(REGISTER_LOGIC register_logic)
+		: m_register_logic(std::move(register_logic)){}
 
 	uint8_t active_id() const  { return m_active_id; }
 	uint8_t standby_id() const { return (m_active_id + 1) % 2; }
 
-	template &lt;typename... Args&gt;
-	decltype(auto) write(Args&amp;&amp;... args)
+	template &lt;typename ...Args&gt;
+	bool write(Args&amp;&amp;... args)
 	{
-		return m_hal.write(standby_id(), std::forward&lt;Args&gt;(args)...);
+		return m_register_logic.write(standby_id(), std::forward&lt;Args&gt;(args)...);
 	}
 
-	template &lt;typename... Args&gt;
-	decltype(auto) commit(Args&amp;&amp;... args)
+	template &lt;typename ...Args&gt;
+	void commit(Args&amp;&amp;... args)
 	{
 		const auto current_standby_id = standby_id();
 		m_active_id = current_standby_id;
-		return m_hal.commit(current_standby_id, std::forward&lt;Args&gt;(args)...);
+		m_register_logic.commit(current_standby_id, std::forward&lt;Args&gt;(args)...);
 	}
 };</code></pre>
 				<p><a href="https://godbolt.org/z/zd5EG59P4">https://godbolt.org/z/zd5EG59P4</a></p>
 				<script>
 					window.revealReadyQueue.push(() => {
 						setTimeout(() => highlightMarkedCode('activeStandbyBank', [
-							['decltype(auto)', 1],
-							['decltype(auto)', 2],
 							['standby_id()', 2],
 							['current_standby_id', 3],
 						]), 100);
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 45:00]
-
-					And here is the machinery. Twenty-six lines, and it works for *any* HAL that satisfies the
-					contract.
-
-					(lines 1-2) A class template over `Hal`.
-
-					(lines 4-6) It owns the HAL by value — no pointer, no indirection, and the compiler can see right
-					through it — plus one byte of state: which bank is active.
-
-					(lines 8-12) Constructor, and the trivial bank arithmetic. This is the policy, written once.
-
-					(lines 14-18) `write`. This is the interesting part. A variadic pack of forwarding references —
-					everything from the middle of the talk. It injects `standby_id()` as the first argument and perfectly
-					forwards everything else through to the HAL. That is how the signature stays unfixed: the wrapper
-					never names the peripheral's argument types, it just passes them along.
-
-					And `decltype(auto)` as the return type — highlighted. Why not plain `auto`? Because `auto` strips
-					references and const. If the HAL returns a `uint32_t&amp;` into a register cache, `auto` would
-					silently copy it. `decltype(auto)` propagates the return type *exactly*. It is the return-value
-					counterpart of perfect forwarding — perfect returning.
-
-					(lines 20-26) `commit` is the same shape, plus the policy: capture the standby id, make it active,
-					then tell the HAL to commit. Note it grabs `standby_id()` into a local *before* flipping
-					`m_active_id` — order matters, and it is written in exactly one place instead of in every driver.
-
-					So: total coupling between the two files is one implicit requirement. No header shared, no interface
-					inherited, and zero run-time overhead — after inlining, `mgr.write(...)` *is* `hal.write(0, ...)`.
-					Godbolt link proves it.
+					<p>[1:15 — 39:35]</p>
+					<p>Now let's have a look at the ActiveStandbyBank implementation which is the star of the show.</p>
+					<p>It is 27 lines and it works with ANY register logic that satisfies the expected interface.</p>
+					<p>(lines 1-2) A class template over `REGISTER_LOGIC`.</p>
+					<p>(lines 4-6) It owns the register logic by value — no pointer, no indirection, and the compiler can see right
+					through it — plus one byte of state: which bank is active.</p>
+					<p>(lines 8-12) Constructor, and the trivial bank arithmetic. This is the policy, written once.</p>
+					<p>(lines 14-18) `write`. This is the interesting part.
+					We got our forwarding reference pack.
+					Then on line 17, we call `m_register_logic.write` with the standby id and perfectly forward the arguments.</p>
+					<p>(lines 20-26) `commit` is the same shape.
+					It grabs the arguments using a forwarding reference pack.
+					It is to be noted that in our case the commit function took no argument so the parameter pack was empty. But that is ok.</p>
 				</aside>
 			</section>
 
@@ -2095,28 +2027,12 @@ public:
 					</table>
 				</div>
 				<aside class="notes">
-					[1:00 — cumulative 46:00]
-
-					RMW uses bitshift and bitwise operations to manipulate specific fields within a register.
-
-					Third and final example — my favourite, because it delivers all three promises from slide two at
-					once: generic, type safe, and provably zero cost.
-
-					The domain, briefly. Hardware is programmed through registers. A register is typically 32 bits, and
-					those bits are carved into *fields* of different widths. To change one field you cannot just write
-					the register — you would clobber the neighbours. You do a read-modify-write: read the current value,
-					mask out the field's bits, OR in the new value shifted into position, write it back.
-
-					That algorithm is identical for every field of every register on every chip. Only the offset and the
-					width change. That is a screaming candidate for a generic abstraction.
-
-					Concrete example: the ARM PL011 UART's UARTLCR_H register. Look at the tables — WLEN is two bits at
-					offset 5, FEN is one bit at offset 4, PEN is one bit at offset 1. Different sizes, different
-					positions.
-
-					And how is this normally written? Raw macros and hand-computed hex masks. Which means: nothing stops
-					you using a mask from a *different* register. I have shipped that bug. It cost me two days with an
-					oscilloscope.
+					<p>[0:50 — 40:25]</p>
+					<p>And finally the last example which is my favorite.</p>
+					<p>We have talked about registers and we know they are used to program the hardware.
+					In order to save memory space, several settings are grouped into a single register using fields. They have a different size and position within the register.
+					To update the fields we need to use a read-modify-write operation: read the current value of the register, modify the specific field, and write the new value back.</p>
+					<p>For instance here we see the fields of a UARTLCR_H register from the ARM PL011 UART.</p>
 				</aside>
 			</section>
 
@@ -2127,8 +2043,9 @@ public:
 				<ul>
 					<li>Provide a <code>Register::write(...)</code> function to write the fields
 						<ul>
-							<li>Multiple fields can be written at once</li>
-							<li>Order of fields does not matter</li>
+							<li>Multiple fields can be written at once i.e multiple parameters</li>
+							<li>We can choose how many field to write at once</li>
+							<li>The order of parameters doesn't matter</li>
 						</ul>
 					</li>
 					<li>Type safe</li>
@@ -2159,27 +2076,21 @@ lcrh.write(
 					</div>
 				</div>
 				<aside class="notes">
-					[1:00 — cumulative 47:00]
-
-					Here is what I want the API to look like. Requirements first, then the client code.
-
-					One `write` function. It must accept multiple fields at once — one read-modify-write cycle for the
+					<p>[1:35 — 42:00]</p>
+					<p>Here is what I want the API to look like. Requirements first, then the client code.</p>
+					<p>One `write` function. It must accept multiple fields at once — one read-modify-write cycle for the
 					whole update, which for hardware is not just faster, it is *correct*: the register is never in a
 					half-configured state. The order of the fields must not matter — they are named, not positional. And
-					it must be type safe.
-
-					(fragment — left) So the client writes this. Each field is a small named object carrying its value:
+					it must be type safe.</p>
+					<p>(fragment — left) So the client writes this. Each field is a small named object carrying its value:
 					`WLEN{0b11}` for 8 data bits, `FEN{1}` to enable FIFOs, `PEN{0}` for no parity. It reads like the
-					datasheet. No shifts, no masks, no hex constant you have to trust.
-
-					(fragment — right) And the same three fields in a different order does exactly the same thing.
-
-					Now — the type safety claim. What I want is for `UARTLCR_H::WLEN` and, say, `UARTCR::WLEN` to be
+					datasheet. No shifts, no masks, no hex constant you have to trust.</p>
+					<p>(fragment — right) And the same three fields in a different order does exactly the same thing.</p>
+					<p>Now — the type safety claim. What I want is for `UARTLCR_H::WLEN` and, say, `UARTCR::WLEN` to be
 					different types, so that passing the wrong one is a *compile error*, not a silent corruption of a
 					neighbouring field. That is the day-two-with-an-oscilloscope bug, and I want the compiler to catch
-					it.
-
-					Let's build it. Two slides.
+					it.</p>
+					<p>Let's build it. Two slides.</p>
 				</aside>
 			</section>
 
@@ -2221,32 +2132,18 @@ struct UARTLCR_H : public Register&lt;UARTLCR_H&gt; {
 					});
 				</script>
 				<aside class="notes">
-					[1:00 — cumulative 48:00]
-
-					It is very important to say each field knows the type of the register they belong to.
-
-					This is the register *definition* — the part a hardware vendor or a code generator writes once per
-					chip.
-
-					(lines 1-2) There is CRTP again: `UARTLCR_H` derives from `Register&lt;UARTLCR_H&gt;`, passing
-					itself. So the base knows exactly which register it is abstracting. Remember that from ten minutes
-					ago.
-
-					(line 3) Constructor takes the memory-mapped address.
-
-					(lines 5-12) And here is a field. `WLEN` is a nested struct, and look at what it carries. (line 6)
-					`using REG = UARTLCR_H` — a nested *type alias* saying "I belong to this register". This is the type
-					safety mechanism, and I will use it on the next slide. (lines 7-9) Three `constexpr` values: the
-					offset, the size, and the mask computed from them — computed by the compiler, from the datasheet
-					numbers, so there is no hand-written hex to get wrong. (lines 10-11) And the runtime value.
-
-					(lines 14-21) `PEN` is the same shape with different numbers. Boilerplate, and honestly in
-					production this is generated from the vendor's SVD file.
-
-					(fragment) The point: each nested struct satisfies the implicit requirements of the abstraction — a
+					<p>[1:30 — 43:30]</p>
+					<p>Let's first have a look at the UARTLCR_H register implementation.</p>
+					<p>(lines 1-2) We are using the CRTP pattern to tell the parent class the type of the register it abstracts. We will see in a moment how useful that is.</p>
+					<p>(line 3) Constructor takes the memory-mapped address.</p>
+					<p>Then we have our first field definition.
+					Each field of the register will be a nested struct.
+					The structure will have: a nested type. This type is actually the type of the register that the fields belong to. Three static constexpr values: the offset, the size, and the mask computed from them. And finally, a runtime `value` member which is the value that we want to write into the field.</p>
+					<p>Then we do the same for all the other fields, for instance PEN.</p>
+					<p>(fragment) The point: each nested struct satisfies the implicit requirements of the abstraction — a
 					nested type `REG`, three static constexpr values, and a `value` member. That is the contract. And
 					notice it includes a *nested type* — remember I flagged that back on the implicit requirements
-					slide. This is where it pays off.
+					slide. This is where it pays off.</p>
 				</aside>
 			</section>
 
@@ -2254,78 +2151,73 @@ struct UARTLCR_H : public Register&lt;UARTLCR_H&gt; {
 			<section data-auto-animate>
 				<h1>Flexible and safe register accesses</h1>
 				<h2>Register abstraction implementation</h2>
-				<pre data-mark-target="register-abstract-impl"><code class="language-cpp" data-line-numbers="|1-2|3-7|8-20|8-9|11-12|14-19" data-fragment-index="1">template&lt;typename CHILD&gt;
+				<pre data-mark-target="register-abstract-impl"><code class="language-cpp" data-line-numbers="|1-2|3-7|9-11|13-29|13-14|16-17|18-28" data-fragment-index="1">template&lt;typename CHILD&gt;
 class Register{
 private:
 	volatile uint32_t* value; // Points to the actual memory-mapped register
 public:
 	Register(volatile uint32_t* regAddr):value{regAddr}
 	{}
+
+	uint32_t&amp; operator*() {
+		return *value;
+	}
+
 	template &lt;typename ...FIELD&gt;
 	void write(FIELD... field)
 	{
 		static_assert((std::is_same_v&lt;typename FIELD::REG, CHILD&gt; &amp;&amp; ...), 
 									"Using field from the wrong register");
 		uint32_t curVal = *value; // Read value
-		([&amp;]
+
+		auto applyField = [&amp;](auto f)
 		{
-			curVal &amp;= ~field.FIELD_MASK; // Clear the field
-			curVal |= (field.value &lt;&lt; field.FIELD_OFFSET) &amp; field.FIELD_MASK; // Set the field
-		}(), ...);
+			using FIELD_TYPE = decltype(f);
+			curVal &amp;= ~FIELD_TYPE::FIELD_MASK;                                        // Clear the field 
+			curVal |= (f.value &lt;&lt; FIELD_TYPE::FIELD_OFFSET) & FIELD_TYPE::FIELD_MASK; // Set the field's value
+		};
+		(applyField(field), ...);
+
 		*value = curVal; // Write back value
 	}
 };</code></pre>
-				<div class="r-stack">
-					<p class="fragment fade-in-then-out" data-fragment-index="4">👍Fields order doesn't matter</p>
-					<p style="font-size: 0.91em" class="fragment fade-in-then-out" data-fragment-index="5">💡 <code>static_assert</code> + <code>&lt;type_traits&gt;</code> ensure fields from the right register are used 💡</p>
-					<div class="fragment fade-in-then-out" data-fragment-index="6">
-						<p>ℹ️ The lambda is declared and directly invoked for each field</p>
-						<p>ℹ️ The fold expression repeats the lambda for each field</p>
+				<div class="r-stack top-aligned">
+					<div class="fragment fade-in-then-out" data-fragment-index="5">
+					<p>👍 Any number of fields</p>
+					<p>👍 Fields order doesn't matter</p>
+					</div>
+					<p style="font-size: 0.91em" class="fragment fade-in-then-out" data-fragment-index="6">💡 <code>static_assert</code> + <code>&lt;type_traits&gt;</code> ensure fields from the right register are used 💡</p>
+					<div class="fragment fade-in-then-out" data-fragment-index="7">
+						<p>ℹ️ The fold expression executes the lambda for each field</p>
 					</div>
 				</div>
 				<script>
 					window.revealReadyQueue.push(() => {
 						setTimeout(() => highlightMarkedCode('register-abstract-impl', [
 							['...FIELD', 1],
-							['FIELD::REG', 1],
+							['FIELD...', 1],
+							['CHILD', 1, 'lightgreen'],
+							['CHILD', 2, 'lightgreen'],
+							['FIELD::REG', 1, 'palegreen'],
 							['&& ...', 1],
 							[', ...', 1],
 						]), 100);
 					});
 				</script>
 				<aside class="notes">
-					[1:30 — cumulative 49:30]
-
-					And here is the whole abstraction. Twenty-one lines. This is the payoff slide — take it slowly.
-
-					(lines 1-2) CRTP base, parameterised on `CHILD` — the register type.
-
-					(lines 3-7) One member: a pointer to the memory-mapped register. `volatile`, because the hardware
-					can change it underneath us and the compiler must not cache or reorder these accesses.
-
-					(lines 8-9) `write` takes a variadic pack of fields. That is how you get "any number, any order".
-
-					(lines 11-12) And this is my favourite line in the talk. A `static_assert` with a fold over
-					`&amp;&amp;`: for *every* field in the pack, assert that `FIELD::REG` — the register the field says
-					it belongs to — is the same type as `CHILD`, the register we are writing to. Pass a field from the
-					wrong register and you get a clean compile error saying "Using field from the wrong register".
-
-					That is a whole class of hardware bug, moved from an oscilloscope at 2am to a compiler message. And
-					it is three features you already know, combined: a nested type, a fold expression, and a type trait.
-
-					(lines 14-19) Then the read-modify-write. Read once. Then a lambda that clears and sets one field —
-					declared and immediately invoked — folded over the pack, so it runs once per field. Then write back
-					once. One read, one write, however many fields.
-
-					(fragment) Order doesn't matter — each field carries its own offset and mask, so they are
-					independent.
-
-					(fragment) `static_assert` plus `&lt;type_traits&gt;` gives us the type safety, at zero run-time
-					cost.
-
-					(fragment) And the mechanism, if the syntax is new: the lambda is defined and called on the spot,
-					and the fold repeats it for each field. If that looks alien, remember the C++ Insights trick — write
-					out what it means for three fields.
+					<p>[1:50 — 45:20]</p>
+					<p>Here comes the register abstraction. Let's go into it bit by bit.</p>
+					<p>(lines 1-2) First, we receive the child register type thanks to CRTP.</p>
+					<p>(lines 3-7) We then define some member variables, including a `volatile` pointer to the memory-mapped register.</p>
+					<p>We also take care of defining an operator* that will allow convenient access to the underlying register value.</p>
+					<p>Let's now have a look at the write function.</p>
+					<p>(lines 8-9) `write` takes a variadic pack of fields. That is how you get "any number, any order".</p>
+					<p>(lines 11-12) We enable type safety using static_assert and std::is_same_v. std::is_same_v checks whether the two types given as template arguments are the same.
+					Thanks to the nested type REG of the field, and thanks to the CHILD template parameter, we can check at compile time that the field belongs to the correct register.</p>
+					<p>(lines 14-19) Finally we use read-modify-write to clear the field value and set it to the new one.
+					In order to apply the algorithm to each value, we make use of a lambda from line 20 to 25.
+					From the field type we can apply the right binary operation to achieve what we need.
+					And finally on line 26, we use the fold expression to call the lambda on each field.</p>
 				</aside>
 			</section>
 
@@ -2334,6 +2226,7 @@ public:
 				<h1>Flexible and safe register accesses</h1>
 				<h2>What does all of this cost?</h2>
 				<p>The abstraction executes a lambda for each field...</p>
+				<div class="fragment">
 				<div style="display: flex; gap: 40px; justify-content: space-between; align-items: flex-start;">
 					<div style="flex: 1;">
 						<pre data-id="zcAbstraction"><code class="language-cpp" data-line-numbers>uint32_t testValueAbstraction() {
@@ -2354,35 +2247,20 @@ public:
 	v = (v &amp; ~0x72) | 0x70;
 
 	return v;
-}
-
-
-
-</code></pre>
+}</code></pre>
 					</div>
 				</div>
-				<div class="fragment">
+				<div>
 					<p>Is the abstraction slower, faster or the same?</p>
 					<p>🙋‍♂️🙋‍♀️</p>
 				</div>
+				</div>
 				<aside class="notes">
-					[1:00 — cumulative 50:30]
-
-					So — what does all of this cost?
-
-					Be honest about what we just built. A CRTP base class. Nested structs. A variadic pack. A
-					static_assert with a fold. And a lambda that is declared and invoked once per field. If you told an
-					embedded engineer "I'm going to run a lambda for every register field", you would get a look.
-
-					On the left: the abstraction. On the right: what an experienced firmware engineer writes by hand —
-					one line, `v = (v &amp; ~0x72) | 0x70`. Fast, and completely unreadable and unmaintainable. Which
-					fields are those? Good luck.
-
-					(fragment) So, last audience question, and I want a show of hands. Is the abstraction on the left
-					slower than, faster than, or the same as the hand-written version on the right?
-
-					[Take hands for each option. There will be hands for "slower" — that is the honest expectation.
-					Acknowledge it: "that's what I would have guessed too." Then advance.]
+					<p>[0:30 — 45:50]</p>
+					<p>Now you might wonder. We've got one lambda call per field because of the fold expression. What is the cost of all of this?
+					Let's compare it!
+					I put on the left the abstraction, and on the right the hand-written direct register access with hardcoded value.
+					Last quiz of the day.</p>
 				</aside>
 			</section>
 
@@ -2437,30 +2315,11 @@ public:
 		ret</code></pre>
 					</div>
 				</div>
-				<a href="https://godbolt.org/z/4MMT5x93v"
-					style="position: absolute; bottom: 0.4em; right: 0.8em; font-size: 0.8em; opacity: 0.7;">https://godbolt.org/z/4MMT5x93v</a>
+				<a href="https://godbolt.org/z/dfKK4nKoh"
+					style="position: absolute; bottom: 0.4em; right: 0.8em; font-size: 0.8em; opacity: 0.7;">https://godbolt.org/z/dfKK4nKoh</a>
 				<aside class="notes">
-					[1:00 — cumulative 51:30]
-
-					Identical. Instruction for instruction.
-
-					[Pause here. Let the room read both columns. This is the moment of the talk — do not talk over it.]
-
-					Ten instructions on the left, ten instructions on the right. Same instructions, same order, same
-					registers. This is AArch64, and the link at the bottom is live — go and try to break it.
-
-					Everything we added evaporated. The CRTP base has no vtable, so the object is just the pointer. The
-					nested field structs are empty apart from a value the compiler knows at compile time. The fold is
-					straight-line code. The lambdas inline. The `static_assert` produces no code at all — it is a pure
-					compile-time check. And the masks were `constexpr`, so the compiler folded them into the same
-					constants a human would have typed. The `-3` and `112` you see there? That is our `~0x72` and
-					`0x70`.
-
-					This is what "zero cost abstraction" actually means, and it is not marketing. You do not pay for what
-					you do not use, and what you *do* use, you could not have hand-coded better.
-
-					So the choice between the readable, type-safe version and the fast version was never a choice. You
-					get both.
+					<p>[0:20 — 46:10]</p>
+					<p>Looking at the assembly output, we can see that both the abstraction and the direct register access result in identical instructions. This demonstrates the zero-cost nature of our template-based abstraction.</p>
 				</aside>
 			</section>
 
@@ -2500,31 +2359,32 @@ auto sum(T first, Args... rest)
 				</ul>
 				<p class="fragment">Don't be scared of templates 👻</p>
 				<aside class="notes">
-					[1:30 — cumulative 53:00]
-
-					Let's wrap up. Six takeaways.
-
-					(1) Templates are a very powerful feature of C++ — and you have now seen that the powerful part
-					comes from a handful of simple pieces, not from the scary ones.
-
-					(2) Beware of implicit requirements. They are the mechanism behind everything we built today, *and*
+					<p>[1:45 — 47:55]</p>
+					<p>Let's wrap up. Six takeaways.</p>
+					<p>(1) Templates are a very powerful feature of C++ — and you have now seen that the powerful part
+					comes from a handful of simple pieces, not from the scary ones.</p>
+					<p>(2) Beware of implicit requirements. They are the mechanism behind everything we built today, *and*
 					the source of the worst error messages. Document them in comments, or state them with concepts if
-					you are on C++20.
+					you are on C++20.</p>
+					<p>(3) Replace your macros with templates. The most actionable item on this list — you can do it this
+					week.</p>
+					<p>(4) Generic programming: one implementation, many types, including types that did not exist when you
+					wrote it.</p>
+					<p>(5) Extensibility — non-intrusive extensibility. New sink, new HAL, new register: you add code, you
+					never modify the abstraction.</p>
+					<p>(6) And a good template abstraction simplifies client code without compromising performance. We
+					proved that one with the assembly.</p>
+					<p>(fragment) So: don't be scared of templates. Start small — turn one macro into a function template
+					this week. That is genuinely how it starts.</p>
+				</aside>
+			</section>
 
-					(3) Replace your macros with templates. The most actionable item on this list — you can do it this
-					week.
-
-					(4) Generic programming: one implementation, many types, including types that did not exist when you
-					wrote it.
-
-					(5) Extensibility — non-intrusive extensibility. New sink, new HAL, new register: you add code, you
-					never modify the abstraction.
-
-					(6) And a good template abstraction simplifies client code without compromising performance. We
-					proved that one with the assembly.
-
-					(fragment) So: don't be scared of templates. Start small — turn one macro into a function template
-					this week. That is genuinely how it starts.
+			<section data-auto-animate>
+				<h1 style="text-align: center;">The end!</h1>
+				<img src="images/conquer.png" alt="Conquering templates" style="max-height: 55vh;">
+				<aside class="notes">
+					<p>[0:20 — 48:15]</p>
+					<p>For the record, I gave a small lie at the start of the presentation. While giving the talk to my cat she decided to take a nap on me...</p>
 				</aside>
 			</section>
 
@@ -2532,7 +2392,7 @@ auto sum(T first, Args... rest)
 				<div
 					style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
 					<h1>Questions?</h1>
-					<img src="images/conquer.png" alt="Conquering templates" style="max-height: 55vh;">
+					<p style="text-align: center; font-size: 3em;">🙋‍♂️🙋‍♀️</p>
 				</div>
 				<p
 					style="position: absolute; bottom: 0.6em; left: 1em; text-align: left; font-size: 1em; opacity: 0.8;">
@@ -2540,35 +2400,21 @@ auto sum(T first, Args... rest)
 						href="https://laurentcarlier.com/b2b-template-cppcon-2026/">laurentcarlier.com/b2b-template-cppcon-2026/</a>
 				</p>
 				<aside class="notes">
-					[Q&amp;A — 53:00 to 60:00]
+					<p>[Q&amp;A — 53:00 to 60:00]</p>
 
-					Thank you. The slides, with every Godbolt and C++ Insights link, are at the address at the bottom.
+					<b>KEY POINTS — prepared answers</b>
+					<ul>
+						<li><b>Compile times?</b> Real cost. Keep templates thin, push type-independent logic into non-template helpers, explicit instantiation when the type set is fixed. Measure first</li>
+						<li><b>When still virtual?</b> Type set not known at compile time: plugins, heterogeneous containers, ABI boundaries. Compile-time polymorphism complements runtime, it does not replace it</li>
+						<li><b>Code bloat?</b> Often overstated — the linker folds identical instantiations, inlining usually wins it back. Measure your binary</li>
+						<li><b>Concepts instead?</b> Yes if C++20 — they make the implicit requirements explicit and the errors readable. Nothing today changes</li>
+						<li><b>All compilers?</b> Godbolt uses GCC AArch64 <code>-O2</code>; same with Clang and MSVC. At <code>-O0</code> of course not — zero cost assumes the optimiser is on</li>
+						<li>If Q&amp;A dries up: offer to walk back through the register abstraction slide</li>
+					</ul>
 
-					Happy to take questions.
+					<p>Thank you. The slides, with every Godbolt and C++ Insights link, are at the address at the bottom.</p>
 
-					[Prepared answers for the likely ones:]
-
-					— "What about compile times?" Real cost. Every instantiation is work. Mitigate by keeping templates
-					thin, moving type-independent logic into non-template helpers, and using explicit instantiation in a
-					.cpp when the set of types is fixed. Measure before you worry.
-
-					— "When should I still use virtual?" When the type set is not known at compile time: plugins,
-					heterogeneous containers, anything crossing an ABI boundary. Templates are compile-time
-					polymorphism; they do not replace runtime polymorphism, they complement it.
-
-					— "Code bloat?" Possible, but often overstated — identical instantiations frequently get folded by
-					the linker, and the inlining usually wins back more than it costs. Measure your binary.
-
-					— "Should I use concepts instead?" Yes, if you have C++20. Concepts do not change what we built —
-					they make the implicit requirements explicit and the errors readable. Everything today works
-					unchanged in C++17 and, apart from folds, in C++11.
-
-					— "Does the register example work on all compilers?" The Godbolt link uses GCC for AArch64 at -O2.
-					I have seen the same result with Clang and MSVC. At -O0 it is of course not identical — zero cost
-					assumes the optimiser is on.
-
-					[If Q&amp;A runs dry early: offer to walk back through the register abstraction slide, it is the
-					one people want to see twice.]
+					<p>Happy to take questions.</p>
 				</aside>
 			</section>
 
@@ -2588,7 +2434,7 @@ auto sum(T first, Args... rest)
 				Reveal.initialize({
 					hash: true,
 					slideNumber: 'c/t',
-					width: 1440,
+					width: 1920,
 					height: 1080,
 					margin: 0.04,
 					minScale: 0.2,
